@@ -1,6 +1,5 @@
 // --- app-main.js ---
-// The core D3.js application logic, simulation setup, and main render loop.
-// UPDATED to use 'legendData' and new categories.
+// VERSION 3: Dynamically builds categories and adds legend checkboxes.
 
 // --- Global App State ---
 const app = {
@@ -14,8 +13,8 @@ const app = {
     link: null,
     width: 0,
     height: 0,
-    categories: {},
-    categoryFoci: {},
+    categories: {}, // Will be populated by setupCategories
+    categoryFoci: {}, // Will be populated by setFoci
     baseNodeSize: 25,
     nodeSizeCompany: 28,
     nodeCollisionRadius: 60,
@@ -28,7 +27,7 @@ const app = {
     apiKey: "AIzaSyCkAIR6TdQfs5q515M7AROv1LDq1qEhwKc" // Your API key
 };
 
-// --- Color & Category Definitions ---
+// --- Color & Category Definitions (NOW DYNAMIC) ---
 function setupCategories() {
     const rootStyles = getComputedStyle(document.documentElement);
     const procoreColors = { 
@@ -38,28 +37,30 @@ function setupCategories() {
         metal: rootStyles.getPropertyValue('--procore-metal').trim() 
     };
 
-    // *** THIS IS THE FIX: Added your new categories ***
-    app.categories = {
-        "Preconstruction": { color: procoreColors.lumber },
-        "Project Management": { color: procoreColors.orange },
-        "Financial Management": { color: procoreColors.earth },
-        "Workforce Management": { color: "#3a8d8c" }, // Custom teal
-        "Quality & Safety": { color: "#5B8D7E" }, // A construction green
-        "Platform & Core": { color: "#757575" },
-        "Construction Intelligence": { color: "#4A4A4A" },
-        "External Integrations": { color: "#B0B0B0" },
-        
-        // --- NEWLY ADDED ---
-        "Helix": { color: "#6e42c1" }, // Purple
-        "Project Execution": { color: procoreColors.orange }, // Same as Proj Mgmt
-        "Resource Management": { color: procoreColors.metal } // Same as Workforce
+    // Base color map for known groups
+    const colorMap = {
+        "Preconstruction": procoreColors.lumber,
+        "Project Management": procoreColors.orange,
+        "Financial Management": procoreColors.earth,
+        "Workforce Management": "#3a8d8c", // Custom teal
+        "Quality & Safety": "#5B8D7E", // A construction green
+        "Platform & Core": "#757575",
+        "Construction Intelligence": "#4A4A4A",
+        "External Integrations": "#B0B0B0",
+        "Helix": "#6e42c1", // Purple
+        "Project Execution": procoreColors.orange,
+        "Resource Management": procoreColors.metal,
+        "Emails": "#c94b4b" // A reddish color
     };
     
-    // Add any other missing categories dynamically
+    // Dynamically build app.categories ONLY from nodesData
+    app.categories = {}; // Start fresh
     nodesData.forEach(node => {
         if (!app.categories[node.group]) {
-            console.warn(`Missing category definition for: ${node.group}. Adding a default color.`);
-            app.categories[node.group] = { color: "#" + Math.floor(Math.random()*16777215).toString(16) }; // Assign random color
+            // Assign color from map, or a random color if group is unknown
+            app.categories[node.group] = { 
+                color: colorMap[node.group] || "#" + Math.floor(Math.random()*16777215).toString(16)
+            };
         }
     });
 }
@@ -70,15 +71,13 @@ function initializeSimulation() {
     app.width = container.clientWidth;
     app.height = container.clientHeight;
 
-    // Main SVG setup
     app.svg = d3.select("#procore-graph");
     app.g = app.svg.append("g");
     app.linkG = app.g.append("g").attr("class", "links");
     app.nodeG = app.g.append("g").attr("class", "nodes");
 
-    setupMarkers(); // This function is now corrected
+    setupMarkers(); 
 
-    // Zoom behavior
     app.zoom = d3.zoom()
         .scaleExtent([0.2, 4])
         .on("zoom", (event) => {
@@ -88,7 +87,6 @@ function initializeSimulation() {
         });
     app.svg.call(app.zoom);
 
-    // Force simulation
     app.simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(d => d.id).distance(130).strength(0.9))
         .force("charge", d3.forceManyBody().strength(-800))
@@ -96,28 +94,24 @@ function initializeSimulation() {
         .force("collision", d3.forceCollide().radius(app.nodeCollisionRadius).strength(0.8))
         .on("tick", ticked);
 
-    // Initialize node and link selections
     app.link = app.linkG.selectAll("path");
     app.node = app.nodeG.selectAll("g");
 
-    // Set initial cluster points
     setFoci();
 }
 
-// --- Marker & Legend Setup (CORRECTED) ---
+// --- Marker & Legend Setup (Adds Checkboxes) ---
 function setupMarkers() {
     const defs = app.svg.select("defs");
 
-    // *** THIS IS THE FIX: Using 'legendData' instead of 'connectionTypes' ***
     legendData.forEach(type => {
         let color = app.defaultArrowColor;
         if (type.type_id === 'feeds') {
-            color = "#a0a0a0"; // Special gray for feeds
+            color = "#a0a0a0"; 
         } else if (type.visual_style.includes("solid")) {
-            color = 'var(--procore-orange)'; // Use orange for solid lines
+            color = 'var(--procore-orange)';
         }
 
-        // Only add arrows for one-way styles
         if (type.visual_style.includes("one arrow")) {
             defs.append("marker")
                 .attr("id", `arrow-${type.type_id}`)
@@ -132,7 +126,6 @@ function setupMarkers() {
         }
     });
 
-    // Special marker for highlighted state
     defs.append("marker")
         .attr("id", "arrow-highlighted")
         .attr("viewBox", "0 -5 10 10")
@@ -147,12 +140,10 @@ function setupMarkers() {
 
 function populateLegend() {
     const legendContainer = d3.select("#connection-legend");
-    legendContainer.html(""); // Clear existing
+    legendContainer.html(""); 
 
-    // *** THIS IS THE FIX: Using 'legendData' instead of 'connectionTypes' ***
     legendData.forEach(type => {
         let svg;
-        // Re-create the SVG logic based on your new visual_style descriptions
         switch(type.visual_style) {
             case "Dashed line, one arrow":
                 svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='4,3'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
@@ -173,11 +164,19 @@ function populateLegend() {
                 svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
         }
 
-        const item = legendContainer.append("div")
-            .attr("class", "flex items-start mb-2") // Use items-start for long labels
+        const item = legendContainer.append("label") // Change to label for checkbox
+            .attr("class", "flex items-start mb-2 cursor-pointer") 
             .attr("title", type.description);
         
-        item.node().innerHTML = `
+        // Add checkbox
+        item.append("input")
+            .attr("type", "checkbox")
+            .attr("checked", true)
+            .attr("value", type.type_id)
+            .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 mt-0.5 focus:ring-orange-500 legend-checkbox")
+            .on("change", () => updateGraph(true));
+
+        item.node().innerHTML += `
             <div class="flex-shrink-0 w-8">${svg}</div>
             <div class="ml-2">
                 <span class="font-semibold">${type.label}</span>
@@ -193,12 +192,11 @@ function setFoci() {
     const container = document.getElementById('graph-container');
     app.width = container.clientWidth;
     app.height = container.clientHeight;
-    // *** THIS IS THE FIX: Check if simulation exists before using it ***
+    
     if (app.simulation) {
         app.simulation.force("center", d3.forceCenter(app.width / 2, app.height / 2));
     }
 
-    // *** THIS IS THE FIX: Added new categories to layout ***
     const layout = {
         "Platform & Core": { x: 0.5, y: 0.5 },
         "Financial Management": { x: 0.75, y: 0.3 },
@@ -208,15 +206,16 @@ function setFoci() {
         "Workforce Management": { x: 0.75, y: 0.7 },
         "Construction Intelligence": { x: 0.5, y: 0.85 },
         "External Integrations": { x: 0.9, y: 0.5 },
-        // --- NEWLY ADDED ---
         "Helix": { x: 0.1, y: 0.5 },
         "Project Execution": { x: 0.25, y: 0.3 },
-        "Resource Management": { x: 0.75, y: 0.7 }
+        "Resource Management": { x: 0.75, y: 0.7 },
+        "Emails": { x: 0.1, y: 0.1 }
     };
 
+    // Build foci from the dynamically created categories
     Object.keys(app.categories).forEach(key => {
         app.categoryFoci[key] = {
-            x: app.width * (layout[key]?.x || 0.5),
+            x: app.width * (layout[key]?.x || 0.5), 
             y: app.height * (layout[key]?.y || 0.5)
         };
     });
@@ -226,7 +225,7 @@ function forceCluster(alpha) {
     return function(d) {
         const focus = app.categoryFoci[d.group];
         if (!focus) return;
-        let k = alpha * 0.2; // Strength of clustering
+        let k = alpha * 0.2; 
         d.vx -= (d.x - focus.x) * k;
         d.vy -= (d.y - focus.y) * k;
     };
@@ -234,12 +233,9 @@ function forceCluster(alpha) {
 
 // --- Simulation Tick ---
 function ticked() {
-    // Apply clustering force
     if (app.simulation && app.simulation.alpha() > 0.05) {
         app.simulation.nodes().forEach(forceCluster(app.simulation.alpha()));
     }
-
-    // Update positions
     if(app.link) app.link.attr("d", d => `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`);
     if(app.node) app.node.attr("transform", d => `translate(${d.x || 0},${d.y || 0})`);
 }
@@ -248,7 +244,8 @@ function ticked() {
 function updateGraph(isFilterChange = true) {
     if (isFilterChange && app.currentTour) stopTour();
 
-    const filters = getActiveFilters();
+    // getActiveFilters() is in app-controls.js
+    const filters = getActiveFilters(); 
 
     const filteredNodes = nodesData.filter(d => {
         const inCategory = filters.categories.has(d.group);
@@ -259,9 +256,12 @@ function updateGraph(isFilterChange = true) {
     });
 
     const nodeIds = new Set(filteredNodes.map(n => n.id));
+    
+    // *** THIS IS THE FIX: Added filtering by connection type ***
     const filteredLinks = linksData.filter(d => 
         nodeIds.has(d.source.id || d.source) && 
-        nodeIds.has(d.target.id || d.target)
+        nodeIds.has(d.target.id || d.target) &&
+        filters.connectionTypes.has(d.type) // <-- NEW FILTER
     ).map(d => ({...d})); 
 
     // --- D3 Data Join: Nodes ---
@@ -270,13 +270,13 @@ function updateGraph(isFilterChange = true) {
             enter => {
                 const nodeGroup = enter.append("g")
                     .attr("class", "node")
-                    .call(drag(app.simulation))
-                    .on("mouseenter", nodeMouseOver)
-                    .on("mouseleave", nodeMouseOut)
-                    .on("click", nodeClicked);
+                    .call(drag(app.simulation)) // from app-d3-helpers.js
+                    .on("mouseenter", nodeMouseOver) // from app-d3-helpers.js
+                    .on("mouseleave", nodeMouseOut) // from app-d3-helpers.js
+                    .on("click", nodeClicked); // from app-d3-helpers.js
                 
                 nodeGroup.append("path")
-                    .attr("d", d => generateHexagonPath(d.level === 'Company' ? app.nodeSizeCompany : app.baseNodeSize))
+                    .attr("d", d => generateHexagonPath(d.level === 'Company' ? app.nodeSizeCompany : app.baseNodeSize)) // from app-d3-helpers.js
                     .attr("fill", d => app.categories[d.group].color)
                     .style("color", d => app.categories[d.group].color);
                 
@@ -294,9 +294,8 @@ function updateGraph(isFilterChange = true) {
     // --- D3 Data Join: Links (CORRECTED) ---
     app.link = app.link.data(filteredLinks, d => `${d.source.id || d.source}-${d.target.id || d.target}-${d.type}`)
         .join("path")
-        .attr("class", d => `link ${d.type}`) // Use the new type as a class
+        .attr("class", d => `link ${d.type}`) 
         .attr("stroke-width", 2)
-        // *** THIS IS THE FIX: Apply styles based on new legend ***
         .attr("stroke-dasharray", d => {
             const legend = legendData.find(l => l.type_id === d.type);
             if (!legend) return "none";
@@ -311,19 +310,17 @@ function updateGraph(isFilterChange = true) {
             return null;
         });
 
-    // Update simulation
     app.simulation.nodes(filteredNodes);
     app.simulation.force("link").links(filteredLinks);
     app.simulation.alpha(1).restart();
     
-    updateTourDropdown(filters.packageTools);
-    resetHighlight();
+    updateTourDropdown(filters.packageTools); // from app-tours.js
+    resetHighlight(); // from app-d3-helpers.js
 }
 
 // --- Window & Initial Load ---
 window.addEventListener('resize', () => {
     setFoci();
-    // *** THIS IS THE FIX: Check if simulation exists before using it ***
     if(app.simulation) {
         app.simulation.alpha(0.5).restart();
     }
@@ -333,9 +330,9 @@ window.addEventListener('resize', () => {
 document.addEventListener('DOMContentLoaded', () => {
     setupCategories();
     initializeSimulation(); 
-    initializeControls(); 
-    initializeInfoPanel(); 
-    initializeTourControls(); 
+    initializeControls(); // from app-controls.js
+    initializeInfoPanel(); // from app-panel.js
+    initializeTourControls(); // from app-tours.js
     
     populateLegend();
     updateGraph(false); 

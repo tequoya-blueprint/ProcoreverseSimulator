@@ -1,5 +1,5 @@
 // --- app-tours.js ---
-// VERSION 2: Simplifies tour dropdown logic.
+// VERSION 3: Correctly populates all tour types and fixes startTour logic.
 
 /**
  * Initializes event listeners for tour controls and the AI modal.
@@ -80,7 +80,7 @@ function updateTourDropdown(packageTools) {
         aiTourCount++;
     });
 
-    // Show/hide the package tour optgroup
+    // Show/hide the optgroups
     d3.select("#package-tours").style("display", packageTourCount > 0 ? "" : "none");
     d3.select("#ai-tours").style("display", aiTourCount > 0 ? "" : "none");
 
@@ -100,7 +100,7 @@ function startTour(tourData) {
     app.interactionState = 'tour_starting'; // Intermediate state
     
     // Reset filters to ensure tour nodes are visible
-    resetView(); 
+    resetView(); // from app-controls.js
     app.interactionState = 'tour_starting'; // override resetView's 'explore'
     
     // Ensure all required tools for the tour are visible

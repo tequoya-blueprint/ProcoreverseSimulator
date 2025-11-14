@@ -1,4 +1,5 @@
-// --- procoreverse_data_links.js ---
+/**
+ * Procoreverse Data Module (Part 2/3)
  * This file contains all the connection links from SECTION 2
  * and the legend data from SECTION 3.
  */

@@ -66,7 +66,8 @@ const tours = {
         { "nodeId": "Change Events", "info": "A 'Change Event' is created to track the potential cost." },
         { "nodeId": "Commitments", "info": "A Commitment Change Order (CCO) is created to get pricing from the subcontractor." },
         { "nodeId": "Change Orders", "info": "The PCO is created and sent to the owner for approval." },
-        { "nodeId":T&M Tickets", "info": "The superintendent tracks the extra work being done in the field using a T&M Ticket." }
+        // --- THIS LINE IS NOW FIXED ---
+        { "nodeId": "T&M Tickets", "info": "The superintendent tracks the extra work being done in the field using a T&M Ticket." }
       ]
     }
     // Add more package-specific tours here...

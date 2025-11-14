@@ -1,7 +1,9 @@
-// --- procoreverse_data_nodes.js ---
-// Defines all tools (nodes) in the visualization.
-// Data sourced from https://gist.githubusercontent.com/tequoya-blueprint/a16f0d5397861e035ed41cebf4a7f4b7/raw/a3564814cebc36b772067a0cbd543e794b374ee7/procoreverse_nodes.js
+/**
+ * Procoreverse Data Module (Part 1/3)
+ * This file contains all the tool nodes from SECTION 1.
+ */
 
+// --- [SECTION 1] - All Tool Nodes ---
 const nodesData = [
 
   // --- [Group: External Integrations] ---

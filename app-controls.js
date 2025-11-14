@@ -1,6 +1,5 @@
 // --- app-controls.js ---
-// Manages all interactions for the left control panel (filters, search, accordions).
-// VERSION 2: Fixes filter cascade logic.
+// VERSION 3: Fixes filter cascade logic and adds legend filter logic.
 
 /**
  * Initializes all event listeners for the control panel.
@@ -43,6 +42,7 @@ function initializeControls() {
  */
 function populatePersonaFilter() {
     const personaFilter = d3.select("#persona-filter");
+    personaFilter.html('<option value="all">All Personas</option>'); // Reset
     const allPersonas = new Set();
     nodesData.forEach(node => {
         if (node.personas) {
@@ -114,12 +114,12 @@ function onRegionChange() {
     audienceFilter.property("value", "all").property("disabled", region === "all");
     packageFilter.property("value", "all").property("disabled", true);
 
-    if (region === "all") {
-        audienceFilter.selectAll("option[value!='all']").style("display", "none");
-    } else {
+    // Reset audience options
+    audienceFilter.selectAll("option[value!='all']").style("display", "none");
+
+    if (region !== "all") {
         // Show only audiences available for that region
         const availableAudiences = Object.keys(packagingData[region] || {});
-        audienceFilter.selectAll("option[value!='all']").style("display", "none"); // Hide all
         availableAudiences.forEach(aud => {
             audienceFilter.select(`option[value='${aud}']`).style("display", "block");
         });
@@ -169,6 +169,11 @@ function getActiveFilters() {
         d3.selectAll("#category-filters input:checked").nodes().map(el => el.value)
     );
     
+    // *** THIS IS THE FIX: Read from legend checkboxes ***
+    const activeConnectionTypes = new Set(
+        d3.selectAll(".legend-checkbox:checked").nodes().map(el => el.value)
+    );
+    
     let packageTools = null;
     const addOnsContainer = d3.select("#add-ons-container");
     const addOnsCheckboxes = d3.select("#add-ons-checkboxes");
@@ -186,12 +191,7 @@ function getActiveFilters() {
         if (packageInfo) {
             packageTools = new Set(packageInfo.tools);
             
-            // Handle Add-Ons
-            const selectedAddOns = d3.selectAll("#add-ons-checkboxes input:checked")
-                .nodes()
-                .map(el => el.value);
-            selectedAddOns.forEach(addOn => packageTools.add(addOn));
-            
+            // Handle Add-Ons: populate list
             if (packageInfo.addOns && packageInfo.addOns.length > 0) {
                 packageInfo.addOns.forEach(addOn => {
                     const label = addOnsCheckboxes.append("label").attr("class", "flex items-center cursor-pointer py-1");
@@ -199,11 +199,17 @@ function getActiveFilters() {
                         .attr("type", "checkbox")
                         .attr("value", addOn)
                         .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 focus:ring-orange-500")
-                        .on("change", () => updateGraph(true));
+                        .on("change", () => updateGraph(true)); // Re-run filters when add-on is checked
                     label.append("span").attr("class", "text-gray-700").text(addOn);
                 });
                 addOnsContainer.classed('hidden', false);
             }
+            
+            // Handle Add-Ons: add selected ones to packageTools
+            const selectedAddOns = d3.selectAll("#add-ons-checkboxes input:checked")
+                .nodes()
+                .map(el => el.value);
+            selectedAddOns.forEach(addOn => packageTools.add(addOn));
 
             // Populate and show services
             if (packageInfo.services && packageInfo.services.length > 0) {
@@ -221,7 +227,8 @@ function getActiveFilters() {
         categories: activeCategories,
         persona: d3.select("#persona-filter").property('value'),
         audience: audience,
-        packageTools: packageTools
+        packageTools: packageTools,
+        connectionTypes: activeConnectionTypes // <-- NEW
     };
 }
 
@@ -237,6 +244,7 @@ function resetView() {
     d3.select("#persona-filter").property('value', 'all');
     d3.select("#package-filter").property('value', 'all').property('disabled', true);
     d3.selectAll("#category-filters input").property("checked", true);
+    d3.selectAll(".legend-checkbox").property("checked", true); // <-- NEW
     allCategoriesChecked = true;
 
     // Clear package extras
@@ -293,7 +301,7 @@ function selectNodeFromSearch(d) {
     setTimeout(() => {
         const nodeData = app.simulation.nodes().find(n => n.id === d.id);
         if (nodeData) {
-            nodeClicked(new Event('click'), nodeData);
+            nodeClicked(new Event('click'), nodeData); // from app-d3-helpers.js
         }
     }, isVisible ? 0 : 600); 
 

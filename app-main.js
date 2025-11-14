@@ -1,6 +1,6 @@
 // --- app-main.js ---
 // The core D3.js application logic, simulation setup, and main render loop.
-// UPDATED to use 'legendData' and new 'type_id' fields.
+// UPDATED to use 'legendData' and new categories.
 
 // --- Global App State ---
 const app = {
@@ -38,21 +38,24 @@ function setupCategories() {
         metal: rootStyles.getPropertyValue('--procore-metal').trim() 
     };
 
-    // NOTE: Your new node data might have different group names.
-    // We must verify these match the "group" field in your procoreverse_data_nodes.js
+    // *** THIS IS THE FIX: Added your new categories ***
     app.categories = {
         "Preconstruction": { color: procoreColors.lumber },
         "Project Management": { color: procoreColors.orange },
         "Financial Management": { color: procoreColors.earth },
-        "Workforce Management": { color: procoreColors.metal },
+        "Workforce Management": { color: "#3a8d8c" }, // Custom teal
         "Quality & Safety": { color: "#5B8D7E" }, // A construction green
         "Platform & Core": { color: "#757575" },
         "Construction Intelligence": { color: "#4A4A4A" },
-        "External Integrations": { color: "#B0B0B0" } 
-        // We may need to add "Email" or "ERP Systems" if they are new groups
+        "External Integrations": { color: "#B0B0B0" },
+        
+        // --- NEWLY ADDED ---
+        "Helix": { color: "#6e42c1" }, // Purple
+        "Project Execution": { color: procoreColors.orange }, // Same as Proj Mgmt
+        "Resource Management": { color: procoreColors.metal } // Same as Workforce
     };
     
-    // Add any missing categories dynamically
+    // Add any other missing categories dynamically
     nodesData.forEach(node => {
         if (!app.categories[node.group]) {
             console.warn(`Missing category definition for: ${node.group}. Adding a default color.`);
@@ -105,7 +108,6 @@ function initializeSimulation() {
 function setupMarkers() {
     const defs = app.svg.select("defs");
 
-    // Create a marker for each connection type
     // *** THIS IS THE FIX: Using 'legendData' instead of 'connectionTypes' ***
     legendData.forEach(type => {
         let color = app.defaultArrowColor;
@@ -153,39 +155,40 @@ function populateLegend() {
         // Re-create the SVG logic based on your new visual_style descriptions
         switch(type.visual_style) {
             case "Dashed line, one arrow":
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='4,3'></line><path d='M20,2 L26,5 L20,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
+                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='4,3'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
                 break;
             case "Solid line, two arrows":
                 svg = "<svg width='24' height='10'><path d='M3,2 L9,5 L3,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path><line x1='6' y1='5' x2='18' y2='5' stroke='#a0a0a0' stroke-width='2'></line><path d='M21,2 L15,5 L21,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
                 break;
             case "Solid line, one arrow":
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line><path d='M20,2 L26,5 L20,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
+                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
                 break;
             case "Dotted line, one arrow":
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='1,2'></line><path d='M20,2 L26,5 L20,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
+                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='1,2'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
                 break;
             case "Solid line, one arrow, gray":
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line><path d='M20,2 L26,5 L20,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
+                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
                 break;
             default:
                 svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
         }
 
         const item = legendContainer.append("div")
-            .attr("class", "flex items-start") // Use items-start for long labels
+            .attr("class", "flex items-start mb-2") // Use items-start for long labels
             .attr("title", type.description);
         
         item.node().innerHTML = `
-            <div class="flex-shrink-0">${svg}</div>
-            <div class="ml-3">
+            <div class="flex-shrink-0 w-8">${svg}</div>
+            <div class="ml-2">
                 <span class="font-semibold">${type.label}</span>
-                <span class="block text-xs text-gray-500">${type.description}</span>
+                <span class="block text-xs text-gray-500 leading-snug">${type.description}</span>
             </div>
         `;
     });
 }
 
-// --- Foci & Clustering ---
+
+// --- Foci & Clustering (CORRECTED) ---
 function setFoci() {
     const container = document.getElementById('graph-container');
     app.width = container.clientWidth;
@@ -195,6 +198,7 @@ function setFoci() {
         app.simulation.force("center", d3.forceCenter(app.width / 2, app.height / 2));
     }
 
+    // *** THIS IS THE FIX: Added new categories to layout ***
     const layout = {
         "Platform & Core": { x: 0.5, y: 0.5 },
         "Financial Management": { x: 0.75, y: 0.3 },
@@ -203,8 +207,11 @@ function setFoci() {
         "Quality & Safety": { x: 0.25, y: 0.7 },
         "Workforce Management": { x: 0.75, y: 0.7 },
         "Construction Intelligence": { x: 0.5, y: 0.85 },
-        "External Integrations": { x: 0.9, y: 0.5 }
-        // Add new group layouts here if needed
+        "External Integrations": { x: 0.9, y: 0.5 },
+        // --- NEWLY ADDED ---
+        "Helix": { x: 0.1, y: 0.5 },
+        "Project Execution": { x: 0.25, y: 0.3 },
+        "Resource Management": { x: 0.75, y: 0.7 }
     };
 
     Object.keys(app.categories).forEach(key => {
@@ -228,13 +235,13 @@ function forceCluster(alpha) {
 // --- Simulation Tick ---
 function ticked() {
     // Apply clustering force
-    if (app.simulation.alpha() > 0.05) {
+    if (app.simulation && app.simulation.alpha() > 0.05) {
         app.simulation.nodes().forEach(forceCluster(app.simulation.alpha()));
     }
 
     // Update positions
-    app.link.attr("d", d => `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`);
-    app.node.attr("transform", d => `translate(${d.x || 0},${d.y || 0})`);
+    if(app.link) app.link.attr("d", d => `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`);
+    if(app.node) app.node.attr("transform", d => `translate(${d.x || 0},${d.y || 0})`);
 }
 
 // --- Main Graph Update Function (CORRECTED) ---
@@ -292,13 +299,15 @@ function updateGraph(isFilterChange = true) {
         // *** THIS IS THE FIX: Apply styles based on new legend ***
         .attr("stroke-dasharray", d => {
             const legend = legendData.find(l => l.type_id === d.type);
-            if (legend && legend.visual_style.includes("Dashed")) return "4,3";
-            if (legend && legend.visual_style.includes("Dotted")) return "1,2";
+            if (!legend) return "none";
+            if (legend.visual_style.includes("Dashed")) return "4,3";
+            if (legend.visual_style.includes("Dotted")) return "1,2";
             return "none";
         })
         .attr("marker-end", d => {
             const legend = legendData.find(l => l.type_id === d.type);
-            if (legend && legend.visual_style.includes("one arrow")) return `url(#arrow-${d.type})`;
+            if (!legend) return null;
+            if (legend.visual_style.includes("one arrow")) return `url(#arrow-${d.type})`;
             return null;
         });
 
@@ -314,7 +323,10 @@ function updateGraph(isFilterChange = true) {
 // --- Window & Initial Load ---
 window.addEventListener('resize', () => {
     setFoci();
-    app.simulation.alpha(0.5).restart();
+    // *** THIS IS THE FIX: Check if simulation exists before using it ***
+    if(app.simulation) {
+        app.simulation.alpha(0.5).restart();
+    }
 });
 
 // --- Main Initialization Function ---

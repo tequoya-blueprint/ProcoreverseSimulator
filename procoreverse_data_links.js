@@ -653,7 +653,7 @@ const linksData = [
     "target": "ERP Systems",
     "type": "syncs",
     "dataFlow": "Payment status is synced in the ERP system."
-  }
+  },
   {
   "source": "Bidding",
   "target": "Drawings",

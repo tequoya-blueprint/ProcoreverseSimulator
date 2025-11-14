@@ -1,12 +1,13 @@
 // --- app-panel.js ---
 // Manages the right-side info panel, including populating data
 // and handling AI explanations.
+// VERSION 2: Reads from 'legendData' and new link structure.
 
 /**
  * Initializes the info panel event listeners.
  */
 function initializeInfoPanel() {
-    d3.select("#info-close").on("click", resetHighlight);
+    d3.select("#info-close").on("click", () => resetHighlight(true)); // from app-d3-helpers.js
 }
 
 /**
@@ -16,6 +17,9 @@ function initializeInfoPanel() {
 function showInfoPanel(d) {
     const infoPanel = d3.select("#info-panel");
     infoPanel.classed("visible", true);
+    
+    // Scroll to top
+    infoPanel.node().scrollTop = 0;
 
     // --- Populate Header ---
     infoPanel.select("#info-title").html(
@@ -23,7 +27,6 @@ function showInfoPanel(d) {
     );
     infoPanel.select("#info-category").text(d.group);
 
-    // Level Badge
     infoPanel.select("#info-level-container").html(
         d.level ? `<span class="text-xs font-semibold inline-block py-1.5 px-3 uppercase rounded-full text-gray-700 bg-gray-100 border border-gray-200">${d.level} Level</span>` : ""
     );
@@ -43,7 +46,7 @@ function showInfoPanel(d) {
 
     // Case Study Link
     const caseStudyContainer = infoPanel.select("#case-study-link-container").html("");
-    if (d.caseStudyUrl) { // Note: Your node data doesn't have this yet, but this adds support
+    if (d.caseStudyUrl) { // This is ready for when you add case study URLs
         caseStudyContainer.append("a")
             .attr("href", d.caseStudyUrl)
             .attr("target", "_blank")
@@ -69,12 +72,12 @@ function populateConnectionList(d) {
         connections.forEach(l => {
             const otherNode = l.source.id === d.id ? l.target : l.source;
             const direction = l.source.id === d.id ? 'out' : 'in';
-            const connType = connectionTypes.find(t => t.id === l.type);
+            // *** THIS IS THE FIX: Read from legendData using type_id ***
+            const connType = legendData.find(t => t.type_id === l.type);
 
-            // Determine arrow icon
             let arrowIcon = '';
             if (connType) {
-                if (connType.id === 'sync-bi' || connType.id === 'create_link_bi') {
+                if (connType.visual_style.includes("two arrows")) {
                     arrowIcon = '<i class="fas fa-exchange-alt text-orange-500 mx-3"></i>';
                 } else if (direction === 'out') {
                     arrowIcon = '<i class="fas fa-long-arrow-alt-right text-orange-500 mx-3"></i>';
@@ -86,10 +89,9 @@ function populateConnectionList(d) {
             const li = connectionList.append("li")
                 .attr("data-other-node-id", otherNode.id)
                 .attr("data-type", l.type)
-                .on("mouseenter", function() { highlightConnection(this, d); })
-                .on("mouseleave", () => resetHighlight(false)); // Don't hide panel
+                .on("mouseenter", function() { highlightConnection(this, d); }) // from app-d3-helpers.js
+                .on("mouseleave", () => resetHighlight(false)); // from app-d3-helpers.js
 
-            // Title (e.g., Budget --> Commitments)
             li.append("div")
                 .attr("class", "flex items-center font-semibold text-gray-800 pointer-events-none group-hover:text-black transition")
                 .html(direction === 'out' ?
@@ -97,7 +99,6 @@ function populateConnectionList(d) {
                     `<span>${otherNode.id}</span>${arrowIcon}<span>${d.id}</span>`
                 );
             
-            // Dataflow Description
             if (l.dataFlow) {
                 li.append("div")
                     .attr("class", "text-sm text-gray-600 mt-2 ml-4 pl-3 border-l-2 border-gray-200 pointer-events-none leading-relaxed")
@@ -115,11 +116,11 @@ function populateConnectionList(d) {
         
         aiContainer.append("div")
             .attr("id", "ai-explanation-content")
-            .attr("class", "hidden"); // Hidden by default
+            .attr("class", "hidden"); 
 
     } else {
         connectionList.append("li").text("No direct connections found in current view.");
-        d3.select("#ai-explanation-container").html(""); // Clear AI button
+        d3.select("#ai-explanation-container").html("");
     }
 }
 
@@ -141,7 +142,7 @@ async function getAiExplanation(node, connections) {
     const contentArea = d3.select("#ai-explanation-content");
     
     button.property("disabled", true).html(`<i class="fas fa-spinner fa-spin mr-2"></i>Analyzing...`);
-    contentArea.html("").classed("hidden", false); // Show and clear
+    contentArea.html("").classed("hidden", false);
 
     const connectionsText = connections.map(c => {
         const otherNodeId = c.source.id === node.id ? c.target.id : c.source.id;
@@ -168,10 +169,9 @@ async function getAiExplanation(node, connections) {
         const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (text) {
-            // Basic markdown conversion
             const htmlContent = text
                 .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
             contentArea.html(htmlContent);
         } else {
             throw new Error("No text returned from API.");

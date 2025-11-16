@@ -57,13 +57,15 @@ function updateTourDropdown(packageTools) {
     let aiTourCount = 0;
 
     // Populate Platform Tours
-    Object.entries(tours.platform).forEach(([tourId, tourData]) => {
-        platformTours.append("option").attr("value", tourId).text(tourData.name);
-        platformTourCount++;
-    });
+    if (tours.platform) {
+        Object.entries(tours.platform).forEach(([tourId, tourData]) => {
+            platformTours.append("option").attr("value", tourId).text(tourData.name);
+            platformTourCount++;
+        });
+    }
 
     // Populate Package Tours (only if a package is selected)
-    if (packageTools) {
+    if (packageTools && tours.package) {
         Object.entries(tours.package).forEach(([tourId, tourData]) => {
             // Check if all nodes for this tour are in the selected package
             const isTourVisible = tourData.steps.every(step => packageTools.has(step.nodeId));
@@ -75,10 +77,12 @@ function updateTourDropdown(packageTools) {
     }
     
     // Populate AI Tours
-    Object.entries(tours.ai).forEach(([tourId, tourData]) => {
-        aiTours.append("option").attr("value", tourId).text(tourData.name);
-        aiTourCount++;
-    });
+    if (tours.ai) {
+        Object.entries(tours.ai).forEach(([tourId, tourData]) => {
+            aiTours.append("option").attr("value", tourId).text(tourData.name);
+            aiTourCount++;
+        });
+    }
 
     // Show/hide the optgroups
     d3.select("#package-tours").style("display", packageTourCount > 0 ? "" : "none");
@@ -108,7 +112,11 @@ function startTour(tourData) {
     let filtersChanged = false;
 
     // Check categories
-    const tourCategories = new Set(tourData.steps.map(s => nodesData.find(n => n.id === s.nodeId).group));
+    const tourCategories = new Set(tourData.steps.map(s => {
+        const node = nodesData.find(n => n.id === s.nodeId);
+        return node ? node.group : null;
+    }).filter(Boolean)); // Filter out nulls if node not found
+    
     d3.selectAll("#category-filters input").each(function() {
         if (tourCategories.has(this.value) && !this.checked) {
             this.checked = true;

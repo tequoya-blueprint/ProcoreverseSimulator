@@ -129,7 +129,12 @@ function previewTour(tourData) {
     app.link.transition().duration(400)
         .style("stroke-opacity", l => tourLinks.has(l) ? 1 : opacity * 0.5)
         .attr("marker-end", l => {
-            if (tourLinks.has(l) && !l.type.includes('sync')) return `url(#arrow-highlighted)`;
+            // Find the legend type for this link
+            const legendType = legendData.find(type => type.type_id === l.type);
+            // Only show an arrow if it's a one-way style
+            if (tourLinks.has(l) && legendType && legendType.visual_style.includes("one arrow")) {
+                 return `url(#arrow-highlighted)`;
+            }
             return null;
         });
 

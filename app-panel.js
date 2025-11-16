@@ -1,5 +1,5 @@
 // --- app-panel.js ---
-// VERSION 3: Fixes 'supportDocUrl' typo.
+// VERSION 3: Fixes 'supportDocUrl' and 'caseStudyUrl' field names.
 
 /**
  * Initializes the info panel event listeners.
@@ -31,7 +31,7 @@ function showInfoPanel(d) {
     // --- Populate Body ---
     infoPanel.select("#info-description").text(d.description || "No description available.");
 
-    // *** THIS IS THE FIX: Changed 'd.supportUrl' to 'd.supportDocUrl' ***
+    // *** THIS IS THE FIX: Using 'd.supportDocUrl' ***
     const linkContainer = infoPanel.select("#info-link-container").html("");
     if (d.supportDocUrl && d.supportDocUrl.trim() !== "") {
         linkContainer.append("a")
@@ -41,7 +41,7 @@ function showInfoPanel(d) {
             .html(`<i class="fas fa-life-ring mr-3"></i> Procore Support & Documentation`);
     }
 
-    // This code is correct. It will only show a link if caseStudyUrl is not an empty string.
+    // *** THIS IS THE FIX: Using 'd.caseStudyUrl' ***
     const caseStudyContainer = infoPanel.select("#case-study-link-container").html("");
     if (d.caseStudyUrl && d.caseStudyUrl.trim() !== "") { 
         caseStudyContainer.append("a")

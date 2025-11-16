@@ -342,7 +342,16 @@ const nodesData = [
     "caseStudyUrl": "",
     "supportDocUrl": ""
   },
-
+{
+    "id": "Workflows",
+    "group": "Platform & Core",
+    "level": "company",
+    "description": "Custom approval workflows for various tools (e.g., Submittals, Invoicing, RFIs).",
+    "personas": [ "pm", "fm", "admin" ],
+    "caseStudyUrl": "",
+    "supportDocUrl": "https://v2.support.procore.com/product-manuals/workflows-company/"
+  },
+  
   // --- [Group: Preconstruction] ---
   {
     "id": "Bid Board",

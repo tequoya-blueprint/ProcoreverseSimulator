@@ -1,5 +1,5 @@
 // --- app-main.js ---
-// VERSION 3: Dynamically builds categories and adds legend checkboxes.
+// VERSION 5: Fixes Helix color to be distinct.
 
 // --- Global App State ---
 const app = {
@@ -47,9 +47,9 @@ function setupCategories() {
         "Platform & Core": "#757575",
         "Construction Intelligence": "#4A4A4A",
         "External Integrations": "#B0B0B0",
-        "Helix": "#6e42c1", // Purple
+        "Helix": "#000000", // <<<--- FIX: Changed to a distinct Procore-like Black
         "Project Execution": procoreColors.orange,
-        "Resource Management": procoreColors.metal,
+        "Resource Management": procoreColors.metal, // This one keeps metal
         "Emails": "#c94b4b" // A reddish color
     };
     
@@ -104,13 +104,18 @@ function initializeSimulation() {
 function setupMarkers() {
     const defs = app.svg.select("defs");
 
+    const arrowColors = {
+        "creates": "var(--procore-orange)",
+        "converts-to": "var(--procore-orange)",
+        "pushes-data-to": "var(--procore-orange)",
+        "pulls-data-from": app.defaultArrowColor,
+        "attaches-links": app.defaultArrowColor,
+        "feeds": "#4A4A4A",
+        "syncs": "var(--procore-metal)"
+    };
+
     legendData.forEach(type => {
-        let color = app.defaultArrowColor;
-        if (type.type_id === 'feeds') {
-            color = "#a0a0a0"; 
-        } else if (type.visual_style.includes("solid")) {
-            color = 'var(--procore-orange)';
-        }
+        const color = arrowColors[type.type_id] || app.defaultArrowColor;
 
         if (type.visual_style.includes("one arrow")) {
             defs.append("marker")
@@ -142,33 +147,23 @@ function populateLegend() {
     const legendContainer = d3.select("#connection-legend");
     legendContainer.html(""); 
 
-    legendData.forEach(type => {
-        let svg;
-        switch(type.visual_style) {
-            case "Dashed line, one arrow":
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='4,3'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
-                break;
-            case "Solid line, two arrows":
-                svg = "<svg width='24' height='10'><path d='M3,2 L9,5 L3,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path><line x1='6' y1='5' x2='18' y2='5' stroke='#a0a0a0' stroke-width='2'></line><path d='M21,2 L15,5 L21,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
-                break;
-            case "Solid line, one arrow":
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
-                break;
-            case "Dotted line, one arrow":
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='1,2'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
-                break;
-            case "Solid line, one arrow, gray":
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>";
-                break;
-            default:
-                svg = "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
-        }
+    const legendSVGs = {
+        "creates": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='var(--procore-orange)' stroke-width='2' stroke-dasharray='4,3'></line><path d='M17,2 L23,5 L17,8' stroke='var(--procore-orange)' stroke-width='2' fill='none'></path></svg>",
+        "converts-to": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='var(--procore-orange)' stroke-width='2' stroke-dasharray='4,3'></line><path d='M17,2 L23,5 L17,8' stroke='var(--procore-orange)' stroke-width='2' fill='none'></path></svg>",
+        "syncs": "<svg width='24' height='10'><path d='M3,2 L9,5 L3,8' stroke='var(--procore-metal)' stroke-width='2' fill='none'></path><line x1='6' y1='5' x2='18' y2='5' stroke='var(--procore-metal)' stroke-width='2'></line><path d='M21,2 L15,5 L21,8' stroke='var(--procore-metal)' stroke-width='2' fill='none'></path></svg>",
+        "pushes-data-to": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='var(--procore-orange)' stroke-width='2'></line><path d='M17,2 L23,5 L17,8' stroke='var(--procore-orange)' stroke-width='2' fill='none'></path></svg>",
+        "pulls-data-from": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='2,4'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>",
+        "attaches-links": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#a0a0a0' stroke-width='2' stroke-dasharray='2,4'></line><path d='M17,2 L23,5 L17,8' stroke='#a0a0a0' stroke-width='2' fill='none'></path></svg>",
+        "feeds": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#4A4A4A' stroke-width='2'></line><path d='M17,2 L23,5 L17,8' stroke='#4A4A4A' stroke-width='2' fill='none'></path></svg>"
+    };
 
-        const item = legendContainer.append("label") // Change to label for checkbox
+    legendData.forEach(type => {
+        const svg = legendSVGs[type.type_id] || "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
+
+        const item = legendContainer.append("label")
             .attr("class", "flex items-start mb-2 cursor-pointer") 
             .attr("title", type.description);
         
-        // Add checkbox
         item.append("input")
             .attr("type", "checkbox")
             .attr("checked", true)
@@ -244,7 +239,6 @@ function ticked() {
 function updateGraph(isFilterChange = true) {
     if (isFilterChange && app.currentTour) stopTour();
 
-    // getActiveFilters() is in app-controls.js
     const filters = getActiveFilters(); 
 
     const filteredNodes = nodesData.filter(d => {
@@ -257,11 +251,10 @@ function updateGraph(isFilterChange = true) {
 
     const nodeIds = new Set(filteredNodes.map(n => n.id));
     
-    // *** THIS IS THE FIX: Added filtering by connection type ***
     const filteredLinks = linksData.filter(d => 
         nodeIds.has(d.source.id || d.source) && 
         nodeIds.has(d.target.id || d.target) &&
-        filters.connectionTypes.has(d.type) // <-- NEW FILTER
+        filters.connectionTypes.has(d.type)
     ).map(d => ({...d})); 
 
     // --- D3 Data Join: Nodes ---
@@ -270,13 +263,13 @@ function updateGraph(isFilterChange = true) {
             enter => {
                 const nodeGroup = enter.append("g")
                     .attr("class", "node")
-                    .call(drag(app.simulation)) // from app-d3-helpers.js
-                    .on("mouseenter", nodeMouseOver) // from app-d3-helpers.js
-                    .on("mouseleave", nodeMouseOut) // from app-d3-helpers.js
-                    .on("click", nodeClicked); // from app-d3-helpers.js
+                    .call(drag(app.simulation)) 
+                    .on("mouseenter", nodeMouseOver) 
+                    .on("mouseleave", nodeMouseOut) 
+                    .on("click", nodeClicked); 
                 
                 nodeGroup.append("path")
-                    .attr("d", d => generateHexagonPath(d.level === 'Company' ? app.nodeSizeCompany : app.baseNodeSize)) // from app-d3-helpers.js
+                    .attr("d", d => generateHexagonPath(d.level === 'Company' ? app.nodeSizeCompany : app.baseNodeSize)) 
                     .attr("fill", d => app.categories[d.group].color)
                     .style("color", d => app.categories[d.group].color);
                 
@@ -296,11 +289,19 @@ function updateGraph(isFilterChange = true) {
         .join("path")
         .attr("class", d => `link ${d.type}`) 
         .attr("stroke-width", 2)
+        .attr("stroke", d => {
+            const legend = legendData.find(l => l.type_id === d.type);
+            if (!legend) return app.defaultArrowColor;
+            if (legend.type_id === "feeds") return "#4A4A4A";
+            if (legend.visual_style.includes("solid") && !legend.visual_style.includes("gray")) return "var(--procore-orange)";
+            if (legend.type_id === "syncs") return "var(--procore-metal)";
+            return app.defaultArrowColor;
+        })
         .attr("stroke-dasharray", d => {
             const legend = legendData.find(l => l.type_id === d.type);
             if (!legend) return "none";
             if (legend.visual_style.includes("Dashed")) return "4,3";
-            if (legend.visual_style.includes("Dotted")) return "1,2";
+            if (legend.visual_style.includes("Dotted")) return "2,4"; // More prominent dot
             return "none";
         })
         .attr("marker-end", d => {
@@ -314,8 +315,8 @@ function updateGraph(isFilterChange = true) {
     app.simulation.force("link").links(filteredLinks);
     app.simulation.alpha(1).restart();
     
-    updateTourDropdown(filters.packageTools); // from app-tours.js
-    resetHighlight(); // from app-d3-helpers.js
+    updateTourDropdown(filters.packageTools); 
+    resetHighlight(); 
 }
 
 // --- Window & Initial Load ---
@@ -330,9 +331,9 @@ window.addEventListener('resize', () => {
 document.addEventListener('DOMContentLoaded', () => {
     setupCategories();
     initializeSimulation(); 
-    initializeControls(); // from app-controls.js
-    initializeInfoPanel(); // from app-panel.js
-    initializeTourControls(); // from app-tours.js
+    initializeControls(); 
+    initializeInfoPanel(); 
+    initializeTourControls(); 
     
     populateLegend();
     updateGraph(false); 

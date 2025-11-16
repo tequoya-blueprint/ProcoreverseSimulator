@@ -1,6 +1,6 @@
 // --- procoreverse_data_tours.js ---
 // Defines all platform and package-specific workflow tours.
-// FIX: Corrected a missing quote on line 69 ("T&M Tickets")
+// FIX: Corrected node ID mismatches (ERP Systems, Tasks)
 
 const tours = {
   platform: {
@@ -21,7 +21,7 @@ const tours = {
         { nodeId: "Commitments", info: "A subcontractor is invited to bill against their Commitment (Subcontract)." },
         { nodeId: "Invoicing", info: "The subcontractor submits their invoice (pay application) against the Commitment's Schedule of Values." },
         { nodeId: "Workflows", info: "The invoice is automatically routed via predefined Workflows to the Project Manager for review." },
-        { nodeId: "ERP Integrations", info: "Once approved, the invoice and payment status are synced to the external ERP/Accounting system." },
+        { nodeId: "ERP Systems", info: "Once approved, the invoice and payment status are synced to the external ERP/Accounting system." },
         { nodeId: "Procore Pay", info: "Alternatively, the approved invoice can be queued for payment disbursement using Procore Pay." }
       ]
     },
@@ -53,7 +53,7 @@ const tours = {
       "steps": [
         { "nodeId": "Drawings", "info": "A superintendent walks the site and pins an issue to the Drawings." },
         { "nodeId": "Observations", "info": "An 'Observation' is created from the pin, noting the non-conforming work." },
-        { "nodeId": "My-Tasks", "info": "The Observation automatically assigns a Task to the subcontractor responsible." },
+        { "nodeId": "Tasks", info: "The Observation automatically assigns a Task to the subcontractor responsible." },
         { "nodeId": "Photos", "info": "The subcontractor fixes the work, attaches a photo as proof, and closes the Task." },
         { "nodeId": "Inspections", "info": "The superintendent verifies the fix during their next 'Inspection' walk." }
       ]
@@ -66,7 +66,6 @@ const tours = {
         { "nodeId": "Change Events", "info": "A 'Change Event' is created to track the potential cost." },
         { "nodeId": "Commitments", "info": "A Commitment Change Order (CCO) is created to get pricing from the subcontractor." },
         { "nodeId": "Change Orders", "info": "The PCO is created and sent to the owner for approval." },
-        // --- THIS LINE IS NOW FIXED ---
         { "nodeId": "T&M Tickets", "info": "The superintendent tracks the extra work being done in the field using a T&M Ticket." }
       ]
     }

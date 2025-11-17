@@ -104,6 +104,32 @@ function toggleAllCategories() {
 
 // --- NEW FILTER CASCADE LOGIC (for Array-based data) ---
 
+// This map defines how to group data values (e.g., "Owners")
+// under a single dropdown option (e.g., "O").
+const audienceDataToKeyMap = {
+    "Contractor": "GC",
+    "General Contractor": "GC",
+    "GC": "GC",
+    "SC": "SC",
+    "Owners": "O",
+    "Owner Developer *Coming Soon": "O"
+};
+
+// This map defines the display label for each dropdown option.
+const audienceKeyToLabelMap = {
+    "GC": "General Contractor",
+    "SC": "Specialty Contractor",
+    "O": "Owner"
+};
+
+// This map defines which data values to search for when a dropdown option is selected.
+const audienceKeyToDataValuesMap = {
+    "GC": ["Contractor", "General Contractor", "GC"],
+    "SC": ["SC"],
+    "O": ["Owners", "Owner Developer *Coming Soon"]
+};
+
+
 function populateRegionFilter() {
     const regionFilter = d3.select("#region-filter");
     const regions = [...new Set(packagingData.map(pkg => pkg.region))];
@@ -125,34 +151,19 @@ function onRegionChange() {
     audienceFilter.property("value", "all").property("disabled", region === "all");
     d3.select("#package-filter").property("value", "all").property("disabled", true);
     
-    audienceFilter.html('<option value="all">All Audiences</option>'); // Clear old options
+    audienceFilter.html('<option value="all">All Audiences</option>'); 
 
     if (region !== "all") {
-        // FIX: This map now includes "General Contractor"
-        const audienceMap = {
-            "Contractor": "GC",
-            "General Contractor": "GC", // <-- ADDED THIS
-            "GC": "GC",
-            "SC": "SC",
-            "Owners": "O",
-            "Owner Developer *Coming Soon": "O"
-        };
-        const audienceLabels = {
-            "GC": "General Contractor",
-            "SC": "Specialty Contractor",
-            "O": "Owner"
-        };
-        
         const availableAudiences = new Set();
         packagingData
             .filter(pkg => pkg.region === region)
             .forEach(pkg => {
-                const audKey = audienceMap[pkg.audience];
+                const audKey = audienceDataToKeyMap[pkg.audience]; // e.g., "Owners" -> "O"
                 if (audKey) availableAudiences.add(audKey);
             });
 
         [...availableAudiences].sort().forEach(audKey => {
-             audienceFilter.append("option").attr("value", audKey).text(audienceLabels[audKey]);
+             audienceFilter.append("option").attr("value", audKey).text(audienceKeyToLabelMap[audKey]);
         });
     }
     
@@ -168,11 +179,8 @@ function onAudienceChange() {
     packageFilter.append("option").attr("value", "all").text("All Packages");
     packageFilter.property("disabled", true);
     
-    // FIX: This list now includes "General Contractor"
-    const audienceDataKeys = [];
-    if (audience === "O") audienceDataKeys.push("Owners", "Owner Developer *Coming Soon");
-    if (audience === "GC") audienceDataKeys.push("Contractor", "GC", "General Contractor"); // <-- ADDED THIS
-    if (audience === "SC") audienceDataKeys.push("SC");
+    // Get all possible data values for the selected audience
+    const audienceDataKeys = audienceKeyToDataValuesMap[audience] || [];
 
     if (region !== 'all' && audience !== 'all') {
         const packages = packagingData.filter(pkg => 
@@ -203,7 +211,7 @@ function onPackageChange() {
  */
 function getActiveFilters() {
     const region = d3.select("#region-filter").property('value');
-    const audience = d3.select("#audience-filter").property('value');
+    const audience = d3.select("#audience-filter").property('value'); // "GC", "SC", or "O"
     const pkgName = d3.select("#package-filter").property('value');
     
     const activeCategories = new Set(
@@ -227,11 +235,8 @@ function getActiveFilters() {
 
     if (region !== 'all' && audience !== 'all' && pkgName !== 'all') {
         
-        // FIX: This list now includes "General Contractor"
-        const audienceDataKeys = [];
-        if (audience === "O") audienceDataKeys.push("Owners", "Owner Developer *Coming Soon");
-        if (audience === "GC") audienceDataKeys.push("Contractor", "GC", "General Contractor"); // <-- ADDED THIS
-        if (audience === "SC") audienceDataKeys.push("SC");
+        // Get all possible data values for the selected audience
+        const audienceDataKeys = audienceKeyToDataValuesMap[audience] || [];
 
         const packageInfo = packagingData.find(pkg => 
             pkg.region === region && 

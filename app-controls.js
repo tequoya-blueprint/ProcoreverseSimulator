@@ -1,5 +1,5 @@
 // --- app-controls.js ---
-// VERSION 3: Fixes filter cascade logic and adds legend filter logic.
+// VERSION 4: Re-written to parse the new array-based packagingData structure.
 
 /**
  * Initializes all event listeners for the control panel.
@@ -13,13 +13,14 @@ function initializeControls() {
     });
 
     // --- Filter Dropdowns (NEW CASCADE LOGIC) ---
+    populateRegionFilter(); // New init function
     d3.select("#region-filter").on("change", onRegionChange);
     d3.select("#audience-filter").on("change", onAudienceChange);
     d3.select("#package-filter").on("change", onPackageChange);
     d3.select("#persona-filter").on("change", () => updateGraph(true));
     
     // --- Category Filters ---
-    populateCategoryFilters(); // This will now dynamically create the list
+    populateCategoryFilters(); 
     d3.select("#toggle-categories").on("click", toggleAllCategories);
 
     // --- Search ---
@@ -104,26 +105,42 @@ function toggleAllCategories() {
     updateGraph(true);
 }
 
-// --- NEW FILTER CASCADE LOGIC ---
+// --- NEW FILTER CASCADE LOGIC (for Array-based data) ---
+
+function populateRegionFilter() {
+    const regionFilter = d3.select("#region-filter");
+    const regions = [...new Set(packagingData.map(pkg => pkg.region))];
+    regions.sort().forEach(region => {
+        // Use NAMER from your data, but show NAMER
+        let label = region === "NAMER" ? "NAM" : region; 
+        if (region === "EUR") label = "EMEA"; // Handle EUR -> EMEA
+        
+        regionFilter.append("option")
+            .attr("value", region)
+            .text(label);
+    });
+}
 
 function onRegionChange() {
     const region = d3.select(this).property("value");
     const audienceFilter = d3.select("#audience-filter");
-    const packageFilter = d3.select("#package-filter");
-
+    
     // Reset and disable Audience and Package
     audienceFilter.property("value", "all").property("disabled", region === "all");
-    packageFilter.property("value", "all").property("disabled", true);
-
-    // Reset audience options
-    audienceFilter.selectAll("option[value!='all']").style("display", "block"); // Show all
+    d3.select("#package-filter").property("value", "all").property("disabled", true);
     
+    audienceFilter.html('<option value="all">All Audiences</option>'); // Clear old options
+
     if (region !== "all") {
-        // Hide audiences not available for that region
-        const availableAudiences = Object.keys(packagingData[region] || {});
-        audienceFilter.selectAll("option[value!='all']").style("display", "none"); // Hide all
-        availableAudiences.forEach(aud => {
-            audienceFilter.select(`option[value='${aud}']`).style("display", "block");
+        const audiences = [...new Set(packagingData
+            .filter(pkg => pkg.region === region)
+            .map(pkg => pkg.audience)
+        )];
+        
+        audiences.sort().forEach(aud => {
+            audienceFilter.append("option")
+                .attr("value", aud)
+                .text(aud);
         });
     }
     
@@ -140,10 +157,15 @@ function onAudienceChange() {
     packageFilter.property("disabled", true);
 
     if (region !== 'all' && audience !== 'all') {
-        const packages = packagingData[region]?.[audience];
-        if (packages) {
-            Object.keys(packages).forEach(pkgName => {
-                packageFilter.append("option").attr("value", pkgName).text(pkgName);
+        const packages = packagingData.filter(pkg => 
+            pkg.region === region && pkg.audience === audience
+        );
+        
+        if (packages.length > 0) {
+            packages.forEach(pkg => {
+                packageFilter.append("option")
+                    .attr("value", pkg.package_name)
+                    .text(pkg.package_name);
             });
             packageFilter.property("disabled", false);
         }
@@ -165,13 +187,12 @@ function onPackageChange() {
 function getActiveFilters() {
     const region = d3.select("#region-filter").property('value');
     const audience = d3.select("#audience-filter").property('value');
-    const pkg = d3.select("#package-filter").property('value');
+    const pkgName = d3.select("#package-filter").property('value');
     
     const activeCategories = new Set(
         d3.selectAll("#category-filters input:checked").nodes().map(el => el.value)
     );
     
-    // *** THIS IS THE FIX: Read from legend checkboxes ***
     const activeConnectionTypes = new Set(
         d3.selectAll(".legend-checkbox:checked").nodes().map(el => el.value)
     );
@@ -188,14 +209,20 @@ function getActiveFilters() {
     addOnsContainer.classed('hidden', true);
     servicesContainer.classed('hidden', true);
 
-    if (region !== 'all' && audience !== 'all' && pkg !== 'all') {
-        const packageInfo = packagingData[region]?.[audience]?.[pkg];
+    if (region !== 'all' && audience !== 'all' && pkgName !== 'all') {
+        // Find the specific package object from the array
+        const packageInfo = packagingData.find(pkg => 
+            pkg.region === region && 
+            pkg.audience === audience && 
+            pkg.package_name === pkgName
+        );
+        
         if (packageInfo) {
             packageTools = new Set(packageInfo.tools);
             
             // Handle Add-Ons: populate list
-            if (packageInfo.addOns && packageInfo.addOns.length > 0) {
-                packageInfo.addOns.forEach(addOn => {
+            if (packageInfo['available_add-ons'] && packageInfo['available_add-ons'].length > 0) {
+                packageInfo['available_add-ons'].forEach(addOn => {
                     const label = addOnsCheckboxes.append("label").attr("class", "flex items-center cursor-pointer py-1");
                     label.append("input")
                         .attr("type", "checkbox")
@@ -214,8 +241,8 @@ function getActiveFilters() {
             selectedAddOns.forEach(addOn => packageTools.add(addOn));
 
             // Populate and show services
-            if (packageInfo.services && packageInfo.services.length > 0) {
-                packageInfo.services.forEach(service => {
+            if (packageInfo['available_services'] && packageInfo['available_services'].length > 0) {
+                packageInfo['available_services'].forEach(service => {
                     servicesList.append("div")
                         .attr("class", "flex items-center text-gray-700")
                         .html(`<i class="fas fa-check-circle text-green-500 mr-2"></i> ${service}`);
@@ -230,7 +257,7 @@ function getActiveFilters() {
         persona: d3.select("#persona-filter").property('value'),
         audience: audience,
         packageTools: packageTools,
-        connectionTypes: activeConnectionTypes // <-- NEW
+        connectionTypes: activeConnectionTypes
     };
 }
 
@@ -242,11 +269,11 @@ function resetView() {
     
     // Reset filters
     d3.select("#region-filter").property('value', 'all');
-    d3.select("#audience-filter").property('value', 'all').property("disabled", true);
+    d3.select("#audience-filter").property('value', 'all').property("disabled", true).html('<option value="all">All Audiences</option>');
     d3.select("#persona-filter").property('value', 'all');
-    d3.select("#package-filter").property('value', 'all').property('disabled', true);
+    d3.select("#package-filter").property('value', 'all').property('disabled', true).html('<option value="all">All Packages</option>');
     d3.selectAll("#category-filters input").property("checked", true);
-    d3.selectAll(".legend-checkbox").property("checked", true); // <-- NEW
+    d3.selectAll(".legend-checkbox").property("checked", true);
     allCategoriesChecked = true;
 
     // Clear package extras

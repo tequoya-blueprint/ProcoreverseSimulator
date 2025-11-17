@@ -1,5 +1,5 @@
 // --- app-controls.js ---
-// VERSION 4: Re-written to parse the new array-based packagingData structure.
+// VERSION 5: Correctly parses the package data array and fixes filter logic.
 
 /**
  * Initializes all event listeners for the control panel.
@@ -13,7 +13,7 @@ function initializeControls() {
     });
 
     // --- Filter Dropdowns (NEW CASCADE LOGIC) ---
-    populateRegionFilter(); // New init function
+    populateRegionFilter();
     d3.select("#region-filter").on("change", onRegionChange);
     d3.select("#audience-filter").on("change", onAudienceChange);
     d3.select("#package-filter").on("change", onPackageChange);
@@ -51,7 +51,6 @@ function populatePersonaFilter() {
         }
     });
 
-    // Sort and add to dropdown
     [...allPersonas].sort().forEach(p => {
         const personaMap = {
             "pm": "Project Manager (GC)",
@@ -61,7 +60,7 @@ function populatePersonaFilter() {
             "design": "Design Team",
             "owner": "Owner",
             "admin": "Admin",
-            "estimator": "Estimator" // Added from your new data
+            "estimator": "Estimator"
         };
         personaFilter.append("option")
             .attr("value", p)
@@ -76,7 +75,6 @@ function populateCategoryFilters() {
     const filtersContainer = d3.select("#category-filters");
     filtersContainer.html(""); // Clear old filters
     
-    // app.categories is now built dynamically in app-main.js
     Object.keys(app.categories).sort().forEach(cat => {
         const label = filtersContainer.append("label").attr("class", "flex items-center cursor-pointer py-1");
         
@@ -109,10 +107,8 @@ function toggleAllCategories() {
 
 function populateRegionFilter() {
     const regionFilter = d3.select("#region-filter");
-    // Get unique regions from the new array structure
     const regions = [...new Set(packagingData.map(pkg => pkg.region))];
     regions.sort().forEach(region => {
-        // Use NAMER from your data, but show NAM
         let label = region; 
         if (region === "NAMER") label = "NAM";
         if (region === "EUR") label = "EMEA";
@@ -127,46 +123,41 @@ function onRegionChange() {
     const region = d3.select(this).property("value");
     const audienceFilter = d3.select("#audience-filter");
     
-    // Reset and disable Audience and Package
     audienceFilter.property("value", "all").property("disabled", region === "all");
     d3.select("#package-filter").property("value", "all").property("disabled", true);
     
     audienceFilter.html('<option value="all">All Audiences</option>'); // Clear old options
 
     if (region !== "all") {
-        // Find unique audiences for the selected region
-        const audiences = [...new Set(packagingData
-            .filter(pkg => pkg.region === region)
-            .map(pkg => pkg.audience)
-        )];
-        
-         // Map the data values (e.g., "Owners") to the dropdown values (e.g., "O")
+        // Map data audiences (e.g., "Owners") to dropdown values (e.g., "O")
         const audienceMap = {
             "Contractor": "GC",
+            "GC": "GC",
+            "SC": "SC",
             "Owners": "O",
-            "SC": "SC" // Add SC if it exists
+            "Owner Developer *Coming Soon": "O"
+            // "Resource Management" is not a standard audience, so we ignore it
         };
-        // Use a Set to avoid duplicate dropdown options if "GC" and "Contractor" both exist
-        const mappedAudiences = {};
+        const audienceLabels = {
+            "GC": "General Contractor",
+            "SC": "Specialty Contractor",
+            "O": "Owner"
+        };
         
-        audiences.sort().forEach(aud => {
-            const audKey = audienceMap[aud] || aud; // Get "O" from "Owners"
-            const audLabel = aud; // Keep "Owners" as the label
-            
-            // This logic handles the mapping from your data (e.g., "Owners")
-            // to the dropdown's internal value (e.g., "O")
-            if(aud === "Owners") mappedAudiences["O"] = "Owner";
-            else if(aud === "Contractor") mappedAudiences["GC"] = "General Contractor";
-            else if(aud === "SC") mappedAudiences["SC"] = "Specialty Contractor";
-            else mappedAudiences[aud] = aud; // Fallback
-        });
+        const availableAudiences = new Set();
+        packagingData
+            .filter(pkg => pkg.region === region)
+            .forEach(pkg => {
+                const audKey = audienceMap[pkg.audience];
+                if (audKey) availableAudiences.add(audKey);
+            });
 
-        for (const [key, value] of Object.entries(mappedAudiences)) {
-             audienceFilter.append("option").attr("value", key).text(value);
-        }
+        [...availableAudiences].sort().forEach(audKey => {
+             audienceFilter.append("option").attr("value", audKey).text(audienceLabels[audKey]);
+        });
     }
     
-    updateGraph(true); // Update graph based on region change
+    updateGraph(true);
 }
 
 function onAudienceChange() {
@@ -174,25 +165,23 @@ function onAudienceChange() {
     const audience = d3.select(this).property("value");
     const packageFilter = d3.select("#package-filter");
 
-    packageFilter.html(""); // Clear old options
+    packageFilter.html(""); 
     packageFilter.append("option").attr("value", "all").text("All Packages");
     packageFilter.property("disabled", true);
     
-    // Map the dropdown value (e.g., "O") back to the data value (e.g., "Owners")
-    let audienceDataKey = audience;
-    if (audience === "O") audienceDataKey = "Owners";
-    if (audience === "GC") audienceDataKey = "Contractor";
-    // Add SC if needed
-    if (audience === "SC") audienceDataKey = "SC"; 
+    // Map dropdown value (e.g., "O") back to ALL matching data values
+    const audienceDataKeys = [];
+    if (audience === "O") audienceDataKeys.push("Owners", "Owner Developer *Coming Soon");
+    if (audience === "GC") audienceDataKeys.push("Contractor", "GC");
+    if (audience === "SC") audienceDataKeys.push("SC");
 
     if (region !== 'all' && audience !== 'all') {
-        // Find packages that match
         const packages = packagingData.filter(pkg => 
-            pkg.region === region && pkg.audience === audienceDataKey
+            pkg.region === region && audienceDataKeys.includes(pkg.audience)
         );
         
         if (packages.length > 0) {
-            packages.sort((a, b) => a.package_name.localeCompare(b.package_name)) // Sort packages alphabetically
+            packages.sort((a, b) => a.package_name.localeCompare(b.package_name))
                 .forEach(pkg => {
                 packageFilter.append("option")
                     .attr("value", pkg.package_name)
@@ -202,7 +191,7 @@ function onAudienceChange() {
         }
     }
     
-    updateGraph(true); // Update graph based on audience change
+    updateGraph(true);
 }
 
 function onPackageChange() {
@@ -232,20 +221,17 @@ function getActiveFilters() {
     const servicesContainer = d3.select("#package-services-container");
     const servicesList = d3.select("#package-services-list");
 
-    // Clear old add-ons and services
     addOnsCheckboxes.html("");
     servicesList.html("");
     addOnsContainer.classed('hidden', true);
     servicesContainer.classed('hidden', true);
 
     if (region !== 'all' && audience !== 'all' && pkgName !== 'all') {
-        // Map the dropdown value (e.g., "O") back to the data value (e.g., "Owners")
         let audienceDataKey = audience;
         if (audience === "O") audienceDataKey = "Owners";
         if (audience === "GC") audienceDataKey = "Contractor";
         if (audience === "SC") audienceDataKey = "SC";
 
-        // Find the specific package object from the array
         const packageInfo = packagingData.find(pkg => 
             pkg.region === region && 
             pkg.audience === audienceDataKey && 

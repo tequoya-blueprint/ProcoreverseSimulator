@@ -130,6 +130,7 @@ function onRegionChange() {
             "SC": "SC",
             "Owners": "O",
             "Owner Developer *Coming Soon": "O"
+            // "Resource Management" is not a standard audience, so we ignore it
         };
         const audienceLabels = {
             "GC": "General Contractor",

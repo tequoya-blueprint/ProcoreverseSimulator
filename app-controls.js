@@ -140,40 +140,26 @@ function onRegionChange() {
             .map(pkg => pkg.audience)
         )];
         
-        audiences.sort().forEach(aud => {
-            // Map 'Owners' to 'Owner' to match your HTML dropdown
-            let audValue = aud;
-            let audLabel = aud;
-            if (aud === "Owners") audValue = "O";
-            if (aud === "Contractor") audValue = "GC"; // Assuming Contractor means GC
-            
-            // Find the option in the HTML and update it
-            const option = audienceFilter.select(`option[value='${audValue}']`);
-            if (!option.empty()) {
-                option.text(audLabel); // Set the display text (e.g., "Owners")
-            } else {
-                 // Or add a new one if it doesn't exist (safer)
-                 audienceFilter.append("option").attr("value", audValue).text(audLabel);
-            }
-        });
-        
-        // This is a failsafe to re-populate if the HTML is out of sync
-        // Let's just re-build the list from scratch
-        audienceFilter.html('<option value="all">All Audiences</option>');
-         const audienceMap = {
-            "GC": "General Contractor",
-            "SC": "Specialty Contractor",
-            "O": "Owner",
-            "Owners": "Owner",
-            "Contractor": "General Contractor"
+         // Map the data values (e.g., "Owners") to the dropdown values (e.g., "O")
+        const audienceMap = {
+            "Contractor": "GC",
+            "Owners": "O",
+            "SC": "SC" // Add SC if it exists
         };
+        // Use a Set to avoid duplicate dropdown options if "GC" and "Contractor" both exist
         const mappedAudiences = {};
-        packagingData
-            .filter(pkg => pkg.region === region)
-            .forEach(pkg => {
-                const audKey = pkg.audience === "Owners" ? "O" : (pkg.audience === "Contractor" ? "GC" : pkg.audience);
-                mappedAudiences[audKey] = audienceMap[audKey] || audKey;
-            });
+        
+        audiences.sort().forEach(aud => {
+            const audKey = audienceMap[aud] || aud; // Get "O" from "Owners"
+            const audLabel = aud; // Keep "Owners" as the label
+            
+            // This logic handles the mapping from your data (e.g., "Owners")
+            // to the dropdown's internal value (e.g., "O")
+            if(aud === "Owners") mappedAudiences["O"] = "Owner";
+            else if(aud === "Contractor") mappedAudiences["GC"] = "General Contractor";
+            else if(aud === "SC") mappedAudiences["SC"] = "Specialty Contractor";
+            else mappedAudiences[aud] = aud; // Fallback
+        });
 
         for (const [key, value] of Object.entries(mappedAudiences)) {
              audienceFilter.append("option").attr("value", key).text(value);
@@ -196,6 +182,8 @@ function onAudienceChange() {
     let audienceDataKey = audience;
     if (audience === "O") audienceDataKey = "Owners";
     if (audience === "GC") audienceDataKey = "Contractor";
+    // Add SC if needed
+    if (audience === "SC") audienceDataKey = "SC"; 
 
     if (region !== 'all' && audience !== 'all') {
         // Find packages that match
@@ -204,7 +192,8 @@ function onAudienceChange() {
         );
         
         if (packages.length > 0) {
-            packages.forEach(pkg => {
+            packages.sort((a, b) => a.package_name.localeCompare(b.package_name)) // Sort packages alphabetically
+                .forEach(pkg => {
                 packageFilter.append("option")
                     .attr("value", pkg.package_name)
                     .text(pkg.package_name);
@@ -254,6 +243,7 @@ function getActiveFilters() {
         let audienceDataKey = audience;
         if (audience === "O") audienceDataKey = "Owners";
         if (audience === "GC") audienceDataKey = "Contractor";
+        if (audience === "SC") audienceDataKey = "SC";
 
         // Find the specific package object from the array
         const packageInfo = packagingData.find(pkg => 

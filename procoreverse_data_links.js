@@ -229,6 +229,12 @@ const linksData = [
     "dataFlow": "Pulls bidders from and adds new bidders to the Directory."
   },
   {
+    "source": "Bidding",
+    "target": "Estimating",
+    "type": "syncs",
+    "dataFlow": "BETA: Awarded Bids are synced with the original estimate for final calculations."
+  },
+  {
     "source": "Estimating",
     "target": "Drawings",
     "type": "pulls-data-from",

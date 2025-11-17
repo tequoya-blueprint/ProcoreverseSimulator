@@ -109,11 +109,13 @@ function toggleAllCategories() {
 
 function populateRegionFilter() {
     const regionFilter = d3.select("#region-filter");
+    // Get unique regions from the new array structure
     const regions = [...new Set(packagingData.map(pkg => pkg.region))];
     regions.sort().forEach(region => {
-        // Use NAMER from your data, but show NAMER
-        let label = region === "NAMER" ? "NAM" : region; 
-        if (region === "EUR") label = "EMEA"; // Handle EUR -> EMEA
+        // Use NAMER from your data, but show NAM
+        let label = region; 
+        if (region === "NAMER") label = "NAM";
+        if (region === "EUR") label = "EMEA";
         
         regionFilter.append("option")
             .attr("value", region)
@@ -132,16 +134,50 @@ function onRegionChange() {
     audienceFilter.html('<option value="all">All Audiences</option>'); // Clear old options
 
     if (region !== "all") {
+        // Find unique audiences for the selected region
         const audiences = [...new Set(packagingData
             .filter(pkg => pkg.region === region)
             .map(pkg => pkg.audience)
         )];
         
         audiences.sort().forEach(aud => {
-            audienceFilter.append("option")
-                .attr("value", aud)
-                .text(aud);
+            // Map 'Owners' to 'Owner' to match your HTML dropdown
+            let audValue = aud;
+            let audLabel = aud;
+            if (aud === "Owners") audValue = "O";
+            if (aud === "Contractor") audValue = "GC"; // Assuming Contractor means GC
+            
+            // Find the option in the HTML and update it
+            const option = audienceFilter.select(`option[value='${audValue}']`);
+            if (!option.empty()) {
+                option.text(audLabel); // Set the display text (e.g., "Owners")
+            } else {
+                 // Or add a new one if it doesn't exist (safer)
+                 audienceFilter.append("option").attr("value", audValue).text(audLabel);
+            }
         });
+        
+        // This is a failsafe to re-populate if the HTML is out of sync
+        // Let's just re-build the list from scratch
+        audienceFilter.html('<option value="all">All Audiences</option>');
+         const audienceMap = {
+            "GC": "General Contractor",
+            "SC": "Specialty Contractor",
+            "O": "Owner",
+            "Owners": "Owner",
+            "Contractor": "General Contractor"
+        };
+        const mappedAudiences = {};
+        packagingData
+            .filter(pkg => pkg.region === region)
+            .forEach(pkg => {
+                const audKey = pkg.audience === "Owners" ? "O" : (pkg.audience === "Contractor" ? "GC" : pkg.audience);
+                mappedAudiences[audKey] = audienceMap[audKey] || audKey;
+            });
+
+        for (const [key, value] of Object.entries(mappedAudiences)) {
+             audienceFilter.append("option").attr("value", key).text(value);
+        }
     }
     
     updateGraph(true); // Update graph based on region change
@@ -155,10 +191,16 @@ function onAudienceChange() {
     packageFilter.html(""); // Clear old options
     packageFilter.append("option").attr("value", "all").text("All Packages");
     packageFilter.property("disabled", true);
+    
+    // Map the dropdown value (e.g., "O") back to the data value (e.g., "Owners")
+    let audienceDataKey = audience;
+    if (audience === "O") audienceDataKey = "Owners";
+    if (audience === "GC") audienceDataKey = "Contractor";
 
     if (region !== 'all' && audience !== 'all') {
+        // Find packages that match
         const packages = packagingData.filter(pkg => 
-            pkg.region === region && pkg.audience === audience
+            pkg.region === region && pkg.audience === audienceDataKey
         );
         
         if (packages.length > 0) {
@@ -175,8 +217,6 @@ function onAudienceChange() {
 }
 
 function onPackageChange() {
-    // Just update the graph. The add-ons/services logic
-    // is handled inside getActiveFilters()
     updateGraph(true);
 }
 
@@ -210,17 +250,22 @@ function getActiveFilters() {
     servicesContainer.classed('hidden', true);
 
     if (region !== 'all' && audience !== 'all' && pkgName !== 'all') {
+        // Map the dropdown value (e.g., "O") back to the data value (e.g., "Owners")
+        let audienceDataKey = audience;
+        if (audience === "O") audienceDataKey = "Owners";
+        if (audience === "GC") audienceDataKey = "Contractor";
+
         // Find the specific package object from the array
         const packageInfo = packagingData.find(pkg => 
             pkg.region === region && 
-            pkg.audience === audience && 
+            pkg.audience === audienceDataKey && 
             pkg.package_name === pkgName
         );
         
         if (packageInfo) {
             packageTools = new Set(packageInfo.tools);
             
-            // Handle Add-Ons: populate list
+            // Handle Add-Ons
             if (packageInfo['available_add-ons'] && packageInfo['available_add-ons'].length > 0) {
                 packageInfo['available_add-ons'].forEach(addOn => {
                     const label = addOnsCheckboxes.append("label").attr("class", "flex items-center cursor-pointer py-1");
@@ -228,13 +273,12 @@ function getActiveFilters() {
                         .attr("type", "checkbox")
                         .attr("value", addOn)
                         .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 focus:ring-orange-500")
-                        .on("change", () => updateGraph(true)); // Re-run filters when add-on is checked
+                        .on("change", () => updateGraph(true));
                     label.append("span").attr("class", "text-gray-700").text(addOn);
                 });
                 addOnsContainer.classed('hidden', false);
             }
             
-            // Handle Add-Ons: add selected ones to packageTools
             const selectedAddOns = d3.selectAll("#add-ons-checkboxes input:checked")
                 .nodes()
                 .map(el => el.value);
@@ -269,7 +313,7 @@ function resetView() {
     
     // Reset filters
     d3.select("#region-filter").property('value', 'all');
-    d3.select("#audience-filter").property('value', 'all').property("disabled", true).html('<option value="all">All Audiences</option>');
+    d3.select("#audience-filter").property('value', 'all').property("disabled", true).html('<option value="all">All Audiences</option><option value="GC">General Contractor</option><option value="SC">Specialty Contractor</option><option value="O">Owner</option>');
     d3.select("#persona-filter").property('value', 'all');
     d3.select("#package-filter").property('value', 'all').property('disabled', true).html('<option value="all">All Packages</option>');
     d3.selectAll("#category-filters input").property("checked", true);

@@ -1,5 +1,5 @@
 // --- app-controls.js ---
-// VERSION 6: Correctly parses the package data array and fixes all filter logic.
+// VERSION 7: Corrects filter cascade logic, persona population, and audience mapping.
 
 /**
  * Initializes all event listeners for the control panel.
@@ -14,7 +14,7 @@ function initializeControls() {
 
     // --- Filter Dropdowns (NEW CASCADE LOGIC) ---
     populateRegionFilter();
-    populatePersonaFilter(); // This will now run
+    populatePersonaFilter(); // <-- FIX: This was missing, now the persona list will populate.
     
     d3.select("#region-filter").on("change", onRegionChange);
     d3.select("#audience-filter").on("change", onAudienceChange);
@@ -35,9 +35,9 @@ function initializeControls() {
 
     // --- Buttons ---
     d3.select("#reset-view").on("click", resetView);
-    d3.select("#help-button").on("click", startOnboarding); // from app-utils.js
-    d3.select("#left-panel-toggle").on("click", toggleLeftPanel); // from app-utils.js
-    d3.select("#left-panel-expander").on("click", toggleLeftPanel); // from app-utils.js
+    d3.select("#help-button").on("click", startOnboarding);
+    d3.select("#left-panel-toggle").on("click", toggleLeftPanel);
+    d3.select("#left-panel-expander").on("click", toggleLeftPanel);
 }
 
 /**
@@ -106,7 +106,6 @@ function toggleAllCategories() {
 
 function populateRegionFilter() {
     const regionFilter = d3.select("#region-filter");
-    // Get unique regions from the new array structure
     const regions = [...new Set(packagingData.map(pkg => pkg.region))];
     regions.sort().forEach(region => {
         let label = region; 
@@ -137,7 +136,6 @@ function onRegionChange() {
             "SC": "SC",
             "Owners": "O",
             "Owner Developer *Coming Soon": "O"
-            // "Resource Management" is not a standard audience, so we ignore it
         };
         const audienceLabels = {
             "GC": "General Contractor",
@@ -170,7 +168,7 @@ function onAudienceChange() {
     packageFilter.append("option").attr("value", "all").text("All Packages");
     packageFilter.property("disabled", true);
     
-    // Map dropdown value (e.g., "O") back to ALL matching data values
+    // FIX: Map dropdown value (e.g., "O") back to ALL matching data values
     const audienceDataKeys = [];
     if (audience === "O") audienceDataKeys.push("Owners", "Owner Developer *Coming Soon");
     if (audience === "GC") audienceDataKeys.push("Contractor", "GC");
@@ -228,15 +226,16 @@ function getActiveFilters() {
     servicesContainer.classed('hidden', true);
 
     if (region !== 'all' && audience !== 'all' && pkgName !== 'all') {
-        let audienceDataKey = audience;
-        if (audience === "O") audienceDataKey = "Owners";
-        if (audience === "GC") audienceDataKey = "Contractor";
-        if (audience === "SC") audienceDataKey = "SC";
+        
+        // FIX: Map dropdown value (e.g., "O") back to ALL matching data values
+        const audienceDataKeys = [];
+        if (audience === "O") audienceDataKeys.push("Owners", "Owner Developer *Coming Soon");
+        if (audience === "GC") audienceDataKeys.push("Contractor", "GC");
+        if (audience === "SC") audienceDataKeys.push("SC");
 
-        // Find the specific package object from the array
         const packageInfo = packagingData.find(pkg => 
             pkg.region === region && 
-            pkg.audience === audienceDataKey && 
+            audienceDataKeys.includes(pkg.audience) && // Use the array
             pkg.package_name === pkgName
         );
         
@@ -287,7 +286,10 @@ function resetView() {
     stopTour(); // From app-tours.js
     
     d3.select("#region-filter").property('value', 'all');
-    d3.select("#audience-filter").property('value', 'all').property("disabled", true).html('<option value="all">All Audiences</option><option value="GC">General Contractor</option><option value="SC">Specialty Contractor</option><option value="O">Owner</option>');
+    // Reset audience filter to its initial state
+    d3.select("#audience-filter").property('value', 'all').property("disabled", true);
+    d3.select("#audience-filter").html('<option value="all">All Audiences</option><option value="GC">General Contractor</option><option value="SC">Specialty Contractor</option><option value="O">Owner</option>');
+    
     d3.select("#persona-filter").property('value', 'all');
     d3.select("#package-filter").property('value', 'all').property('disabled', true).html('<option value="all">All Packages</option>');
     d3.selectAll("#category-filters input").property("checked", true);

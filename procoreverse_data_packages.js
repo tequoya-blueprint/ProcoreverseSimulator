@@ -5,7 +5,7 @@
 const packagingData = [
   {
     "region": "NAMER",
-    "audience": "GC",
+    "audience": "General Contractor",
     "package_name": "Project Execution Essentials",
     "tools": [
       "Drawings",
@@ -34,7 +34,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "GC",
+    "audience": "General Contractor",
     "package_name": "Project Execution Enhanced",
     "tools": [
       "Drawings",
@@ -77,7 +77,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "GC",
+    "audience": "General Contractor",
     "package_name": "Project Execution Premier",
     "tools": [
       "Drawings",
@@ -123,7 +123,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "GC",
+    "audience": "General Contractor",
     "package_name": "Cost Management Enhanced",
     "tools": [
       "Documents",
@@ -153,7 +153,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "GC",
+    "audience": "General Contractor",
     "package_name": "Cost Management Premier",
     "tools": [
       "Documents",
@@ -188,7 +188,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "GC",
+    "audience": "General Contractor",
     "package_name": "Resource Management Premier",
     "tools": [
       "Documents",
@@ -212,7 +212,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "SC",
+    "audience": "Specialty Contractor",
     "package_name": "Project Execution Essentials",
     "tools": [
       "Drawings",
@@ -242,7 +242,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "SC",
+    "audience": "Specialty Contractor",
     "package_name": "Project Execution Enhanced",
     "tools": [
       "Drawings",
@@ -284,7 +284,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "SC",
+    "audience": "Specialty Contractor",
     "package_name": "Project Execution Premier",
     "tools": [
       "Drawings",
@@ -331,7 +331,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "SC",
+    "audience": "Specialty Contractor",
     "package_name": "Cost Management Enhanced",
     "tools": [
       "Documents",
@@ -361,7 +361,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "SC",
+    "audience": "Specialty Contractor",
     "package_name": "Cost Management Premier",
     "tools": [
       "Documents",
@@ -396,7 +396,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "SC",
+    "audience": "Specialty Contractor",
     "package_name": "Resource Management Premier",
     "tools": [
       "Documents",
@@ -420,7 +420,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Essentials",
     "tools": [
       "Drawings",
@@ -449,7 +449,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Enhanced",
     "tools": [
       "Drawings",
@@ -487,7 +487,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Premier",
     "tools": [
       "Drawings",
@@ -530,7 +530,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Cost Management Enhanced",
     "tools": [
       "Documents",
@@ -560,7 +560,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Cost Management Premier",
     "tools": [
       "Documents",
@@ -595,7 +595,7 @@ const packagingData = [
   },
   {
     "region": "NAMER",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Resource Management Premier",
     "tools": [
       "Documents",
@@ -1036,7 +1036,7 @@ const packagingData = [
   },
   {
     "region": "APAC",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Essentials",
     "tools": [
       "Drawings",
@@ -1058,7 +1058,7 @@ const packagingData = [
   },
   {
     "region": "APAC",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Enhanced",
     "tools": [
       "Drawings",
@@ -1089,7 +1089,7 @@ const packagingData = [
   },
   {
     "region": "APAC",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Enhanced w CDE",
     "tools": [
       "Drawings",
@@ -1121,7 +1121,7 @@ const packagingData = [
   },
   {
     "region": "APAC",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Premier",
     "tools": [
       "Drawings",
@@ -1157,7 +1157,7 @@ const packagingData = [
   },
   {
     "region": "APAC",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Premier w CDE",
     "tools": [
       "Drawings",
@@ -1194,7 +1194,7 @@ const packagingData = [
   },
   {
     "region": "APAC",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Cost Management Enhanced",
     "tools": [
       "Documents",
@@ -1217,7 +1217,7 @@ const packagingData = [
   },
   {
     "region": "APAC",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Cost Management Premier",
     "tools": [
       "Documents",
@@ -1245,7 +1245,7 @@ const packagingData = [
   },
   {
     "region": "APAC",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Resource Management Premier",
     "tools": [
       "Documents",
@@ -1502,7 +1502,7 @@ const packagingData = [
   },
   {
     "region": "EUR",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Essentials",
     "tools": [
       "Drawings",
@@ -1524,7 +1524,7 @@ const packagingData = [
   },
   {
     "region": "EUR",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Enhanced",
     "tools": [
       "Drawings",
@@ -1555,7 +1555,7 @@ const packagingData = [
   },
   {
     "region": "EUR",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Enhanced w CDE",
     "tools": [
       "Drawings",
@@ -1587,7 +1587,7 @@ const packagingData = [
   },
   {
     "region": "EUR",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Premier",
     "tools": [
       "Drawings",
@@ -1623,7 +1623,7 @@ const packagingData = [
   },
   {
     "region": "EUR",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Project Execution Premier w CDE",
     "tools": [
       "Drawings",
@@ -1660,7 +1660,7 @@ const packagingData = [
   },
   {
     "region": "EUR",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Cost Management Enhanced",
     "tools": [
       "Documents",
@@ -1683,7 +1683,7 @@ const packagingData = [
   },
   {
     "region": "EUR",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Cost Management Premier",
     "tools": [
       "Documents",
@@ -1711,7 +1711,7 @@ const packagingData = [
   },
   {
     "region": "EUR",
-    "audience": "Owners",
+    "audience": "Owner",
     "package_name": "Resource Management Premier",
     "tools": [
       "Documents",

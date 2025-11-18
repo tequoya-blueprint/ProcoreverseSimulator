@@ -1,5 +1,5 @@
 // --- app-main.js ---
-// VERSION 9: Removes broken Audience filter from nodes.
+// VERSION 10: Final logic. Includes safeguards for missing data files (CRASH FIX).
 
 // --- Global App State ---
 const app = {
@@ -29,38 +29,37 @@ const app = {
 
 // --- Color & Category Definitions ---
 function setupCategories() {
+    // Safely define brand colors using CSS variables
     const rootStyles = getComputedStyle(document.documentElement);
     const procoreColors = { 
         orange: rootStyles.getPropertyValue('--procore-orange').trim(), 
-        lumber: rootStyles.getPropertyValue('--procore-lumber').trim(), 
         earth: rootStyles.getPropertyValue('--procore-earth').trim(), 
         metal: rootStyles.getPropertyValue('--procore-metal').trim() 
     };
 
-    // Base color map for known groups
     const colorMap = {
-        "Preconstruction": procoreColors.lumber,
-        "Project Management": procoreColors.orange,
+        "Preconstruction": "#CEC4A1", // Lumber
         "Financial Management": procoreColors.earth,
-        "Workforce Management": "#3a8d8c", 
         "Quality & Safety": "#5B8D7E", 
         "Platform & Core": "#757575",
-        "Construction Intelligence": "#4A4A4A",
         "External Integrations": "#B0B0B0",
-        "Helix": "#000000", 
+        "Helix": "#000000", // Procore Black
         "Project Execution": procoreColors.orange,
         "Resource Management": procoreColors.metal,
         "Emails": "#c94b4b" 
     };
     
     app.categories = {}; 
-    nodesData.forEach(node => {
-        if (!app.categories[node.group]) {
-            app.categories[node.group] = { 
-                color: colorMap[node.group] || "#" + Math.floor(Math.random()*16777215).toString(16)
-            };
-        }
-    });
+    // CRASH FIX: Check if nodesData exists and is an array before trying to iterate
+    if (typeof nodesData !== 'undefined' && Array.isArray(nodesData)) {
+        nodesData.forEach(node => {
+            if (!app.categories[node.group]) {
+                app.categories[node.group] = { 
+                    color: colorMap[node.group] || "#" + Math.floor(Math.random()*16777215).toString(16)
+                };
+            }
+        });
+    }
 }
 
 // --- D3 Simulation Setup ---
@@ -103,42 +102,27 @@ function setupMarkers() {
     const defs = app.svg.select("defs");
 
     const arrowColors = {
-        "creates": "var(--procore-orange)",
-        "converts-to": "var(--procore-orange)",
-        "pushes-data-to": "var(--procore-orange)",
-        "pulls-data-from": app.defaultArrowColor,
-        "attaches-links": app.defaultArrowColor,
-        "feeds": "#4A4A4A",
-        "syncs": "var(--procore-metal)"
+        "creates": "var(--procore-orange)", "converts-to": "var(--procore-orange)", "pushes-data-to": "var(--procore-orange)",
+        "pulls-data-from": app.defaultArrowColor, "attaches-links": app.defaultArrowColor,
+        "feeds": "#4A4A4A", "syncs": "var(--procore-metal)"
     };
 
-    legendData.forEach(type => {
-        const color = arrowColors[type.type_id] || app.defaultArrowColor;
+    // CRASH FIX: Check if legendData is available before using forEach
+    if (typeof legendData !== 'undefined' && Array.isArray(legendData)) {
+        legendData.forEach(type => {
+            const color = arrowColors[type.type_id] || app.defaultArrowColor;
 
-        if (type.visual_style.includes("one arrow")) {
-            defs.append("marker")
-                .attr("id", `arrow-${type.type_id}`)
-                .attr("viewBox", "0 -5 10 10")
-                .attr("refX", app.arrowRefX)
-                .attr("markerWidth", 5)
-                .attr("markerHeight", 5)
-                .attr("orient", "auto")
-                .append("path")
-                .attr("d", "M0,-5L10,0L0,5")
-                .attr("fill", color);
-        }
-    });
+            if (type.visual_style.includes("one arrow")) {
+                defs.append("marker")
+                    .attr("id", `arrow-${type.type_id}`)
+                    .attr("viewBox", "0 -5 10 10").attr("refX", app.arrowRefX).attr("markerWidth", 5).attr("markerHeight", 5).attr("orient", "auto")
+                    .append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", color);
+            }
+        });
+    }
 
-    defs.append("marker")
-        .attr("id", "arrow-highlighted")
-        .attr("viewBox", "0 -5 10 10")
-        .attr("refX", app.arrowRefX)
-        .attr("markerWidth", 5)
-        .attr("markerHeight", 5)
-        .attr("orient", "auto")
-        .append("path")
-        .attr("d", "M0,-5L10,0L0,5")
-        .attr("fill", "var(--procore-orange)");
+    defs.append("marker").attr("id", "arrow-highlighted").attr("viewBox", "0 -5 10 10").attr("refX", app.arrowRefX).attr("markerWidth", 5).attr("markerHeight", 5).attr("orient", "auto")
+        .append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", "var(--procore-orange)");
 }
 
 function populateLegend() {
@@ -155,31 +139,24 @@ function populateLegend() {
         "feeds": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#4A4A4A' stroke-width='2'></line><path d='M17,2 L23,5 L17,8' stroke='#4A4A4A' stroke-width='2' fill='none'></path></svg>"
     };
 
-    legendData.forEach(type => {
-        const svg = legendSVGs[type.type_id] || "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
+    // CRASH FIX: Check if legendData is available before trying to iterate
+    if (typeof legendData !== 'undefined' && Array.isArray(legendData)) {
+        legendData.forEach(type => {
+            const svg = legendSVGs[type.type_id] || "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
 
-        const item = legendContainer.append("label")
-            .attr("class", "flex items-start mb-2 cursor-pointer") 
-            .attr("title", type.description);
-        
-        item.append("input")
-            .attr("type", "checkbox")
-            .attr("checked", true)
-            .attr("value", type.type_id)
-            .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 mt-0.5 focus:ring-orange-500 legend-checkbox")
-            .on("change", () => updateGraph(true));
+            const item = legendContainer.append("label").attr("class", "flex items-start mb-2 cursor-pointer").attr("title", type.description);
+            
+            item.append("input").attr("type", "checkbox").attr("checked", true).attr("value", type.type_id)
+                .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 mt-0.5 focus:ring-orange-500 legend-checkbox")
+                .on("change", () => updateGraph(true)); 
 
-        item.append("div")
-            .attr("class", "flex-shrink-0 w-8")
-            .html(svg);
-        
-        item.append("div")
-            .attr("class", "ml-2")
-            .html(`
+            item.append("div").attr("class", "flex-shrink-0 w-8").html(svg);
+            item.append("div").attr("class", "ml-2").html(`
                 <span class="font-semibold">${type.label}</span>
                 <span class="block text-xs text-gray-500 leading-snug">${type.description}</span>
             `);
-    });
+        });
+    }
 }
 
 
@@ -194,18 +171,10 @@ function setFoci() {
     }
 
     const layout = {
-        "Platform & Core": { x: 0.5, y: 0.5 },
-        "Financial Management": { x: 0.75, y: 0.3 },
-        "Preconstruction": { x: 0.5, y: 0.15 },
-        "Project Management": { x: 0.25, y: 0.3 },
-        "Quality & Safety": { x: 0.25, y: 0.7 },
-        "Workforce Management": { x: 0.75, y: 0.7 },
-        "Construction Intelligence": { x: 0.5, y: 0.85 },
-        "External Integrations": { x: 0.9, y: 0.5 },
-        "Helix": { x: 0.1, y: 0.5 },
-        "Project Execution": { x: 0.25, y: 0.3 },
-        "Resource Management": { x: 0.75, y: 0.7 },
-        "Emails": { x: 0.1, y: 0.1 }
+        "Platform & Core": { x: 0.5, y: 0.5 }, "Financial Management": { x: 0.75, y: 0.3 }, "Preconstruction": { x: 0.5, y: 0.15 },
+        "Project Management": { x: 0.25, y: 0.3 }, "Quality & Safety": { x: 0.25, y: 0.7 }, "Workforce Management": { x: 0.75, y: 0.7 },
+        "Construction Intelligence": { x: 0.5, y: 0.85 }, "External Integrations": { x: 0.9, y: 0.5 },
+        "Helix": { x: 0.1, y: 0.5 }, "Project Execution": { x: 0.25, y: 0.3 }, "Resource Management": { x: 0.75, y: 0.7 }, "Emails": { x: 0.1, y: 0.1 }
     };
 
     Object.keys(app.categories).forEach(key => {
@@ -239,24 +208,23 @@ function ticked() {
 function updateGraph(isFilterChange = true) {
     if (isFilterChange && app.currentTour) stopTour();
 
-    const filters = getActiveFilters(); 
+    // CRASH FIX: Check if getActiveFilters exists before calling it
+    const filters = (typeof getActiveFilters === 'function') ? getActiveFilters() : { categories: new Set(), persona: 'all', packageTools: null, connectionTypes: new Set() };
 
     const filteredNodes = nodesData.filter(d => {
         const inCategory = filters.categories.has(d.group);
         const inPersona = filters.persona === 'all' || (d.personas && d.personas.includes(filters.persona));
-        
-        // Filter by Package (Tools)
         const inPackage = !filters.packageTools || filters.packageTools.has(d.id);
-
-        // *** FIX: REMOVED 'inAudience' check entirely ***
-        // The audience filter is only for selecting a package, not for filtering nodes directly.
         
         return inCategory && inPersona && inPackage;
     });
 
     const nodeIds = new Set(filteredNodes.map(n => n.id));
     
-    const filteredLinks = linksData.filter(d => 
+    // CRASH FIX: Check if linksData exists before filtering
+    const allLinks = (typeof linksData !== 'undefined' && Array.isArray(linksData)) ? linksData : [];
+
+    const filteredLinks = allLinks.filter(d => 
         nodeIds.has(d.source.id || d.source) && 
         nodeIds.has(d.target.id || d.target) &&
         filters.connectionTypes.has(d.type) 
@@ -322,7 +290,10 @@ function updateGraph(isFilterChange = true) {
     app.simulation.force("link").links(filteredLinks);
     app.simulation.alpha(1).restart();
     
-    updateTourDropdown(filters.packageTools); 
+    // CRASH FIX: Check if updateTourDropdown exists before calling
+    if(typeof updateTourDropdown === 'function') {
+        updateTourDropdown(filters.packageTools); 
+    }
     resetHighlight(); 
 }
 
@@ -338,19 +309,23 @@ window.addEventListener('resize', () => {
 document.addEventListener('DOMContentLoaded', () => {
     setupCategories();
     initializeSimulation(); 
-    initializeControls(); 
-    initializeInfoPanel(); 
-    initializeTourControls(); 
+    
+    // CRASH FIX: Check if functions exist before calling
+    if(typeof initializeControls === 'function') initializeControls(); 
+    if(typeof initializeInfoPanel === 'function') initializeInfoPanel(); 
+    if(typeof initializeTourControls === 'function') initializeTourControls(); 
     
     populateLegend();
     updateGraph(false); 
 
     setTimeout(() => {
-        document.getElementById('loading-overlay').classList.add('hidden');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
     }, 1500);
 
-    if (!localStorage.getItem('procoreverseV2_Visited')) {
-        d3.select("#help-button").classed('initial-pulse', true);
+    const helpButton = d3.select("#help-button");
+    if (helpButton.node() && !localStorage.getItem('procoreverseV2_Visited')) {
+        helpButton.classed('initial-pulse', true);
         localStorage.setItem('procoreverseV2_Visited', 'true');
     }
 });

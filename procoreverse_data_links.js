@@ -713,31 +713,31 @@ const legendData = [
     "visual_style": "Solid line, one arrow, gray"
   }
 {
-    "source": "Maps",
+    "source": "Project Map",
     "target": "Incidents",
     "type": "pulls-data-from",
     "dataFlow": "Displays active Incidents on the map based on location data."
   },
   {
-    "source": "Maps",
+    "source": "Project Map",
     "target": "Inspections",
     "type": "pulls-data-from",
     "dataFlow": "Displays Inspection status and locations on the map."
   },
   {
-    "source": "Maps",
+    "source": "Project Map",
     "target": "Observations",
     "type": "pulls-data-from",
     "dataFlow": "Displays Observation statuses and locations on the map."
   },
   {
-    "source": "Maps",
+    "source": "Project Map",
     "target": "Photos",
     "type": "syncs", // <-- CHANGED to syncs
     "dataFlow": "Pulls geolocated Photos for display; pinning/marking a location on the Map syncs metadata (e.g., location/pin status) back to the Photo item."
   },
   {
-    "source": "Maps",
+    "source": "Project Map",
     "target": "Punch List",
     "type": "pulls-data-from",
     "dataFlow": "Displays Punch List item locations and status on the map."

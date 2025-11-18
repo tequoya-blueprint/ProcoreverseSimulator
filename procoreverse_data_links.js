@@ -712,4 +712,34 @@ const legendData = [
     "description": "Reporting data flow. The origin tool's data is consumed by a data intelligence or business intelligence platform for analysis.",
     "visual_style": "Solid line, one arrow, gray"
   }
+{
+    "source": "Maps",
+    "target": "Incidents",
+    "type": "pulls-data-from",
+    "dataFlow": "Displays active Incidents on the map based on location data."
+  },
+  {
+    "source": "Maps",
+    "target": "Inspections",
+    "type": "pulls-data-from",
+    "dataFlow": "Displays Inspection status and locations on the map."
+  },
+  {
+    "source": "Maps",
+    "target": "Observations",
+    "type": "pulls-data-from",
+    "dataFlow": "Displays Observation statuses and locations on the map."
+  },
+  {
+    "source": "Maps",
+    "target": "Photos",
+    "type": "syncs", // <-- CHANGED to syncs
+    "dataFlow": "Pulls geolocated Photos for display; pinning/marking a location on the Map syncs metadata (e.g., location/pin status) back to the Photo item."
+  },
+  {
+    "source": "Maps",
+    "target": "Punch List",
+    "type": "pulls-data-from",
+    "dataFlow": "Displays Punch List item locations and status on the map."
+  }
 ];

@@ -1,5 +1,5 @@
 // --- app-main.js ---
-// VERSION 9: REMOVES the broken Audience filter logic causing nodes to disappear.
+// VERSION 9: Fixes syntax error crash and removes broken Audience node filtering.
 
 // --- Global App State ---
 const app = {
@@ -13,21 +13,21 @@ const app = {
     link: null,
     width: 0,
     height: 0,
-    categories: {}, // Will be populated by setupCategories
-    categoryFoci: {}, // Will be populated by setFoci
+    categories: {}, 
+    categoryFoci: {}, 
     baseNodeSize: 25,
     nodeSizeCompany: 28,
     nodeCollisionRadius: 60,
-    arrowRefX: 34, // nodeSizeCompany + 6
+    arrowRefX: 34, 
     defaultArrowColor: "#a0a0a0",
-    interactionState: 'explore', // 'explore', 'selected', 'tour'
+    interactionState: 'explore', 
     selectedNode: null,
     currentTour: null,
     currentStep: -1,
-    apiKey: "AIzaSyCkAIR6TdQfs5q515M7AROv1LDq1qEhwKc" // Your API key
+    apiKey: "AIzaSyCkAIR6TdQfs5q515M7AROv1LDq1qEhwKc" 
 };
 
-// --- Color & Category Definitions (NOW DYNAMIC) ---
+// --- Color & Category Definitions ---
 function setupCategories() {
     const rootStyles = getComputedStyle(document.documentElement);
     const procoreColors = { 
@@ -37,27 +37,24 @@ function setupCategories() {
         metal: rootStyles.getPropertyValue('--procore-metal').trim() 
     };
 
-    // Base color map for known groups
     const colorMap = {
         "Preconstruction": procoreColors.lumber,
         "Project Management": procoreColors.orange,
         "Financial Management": procoreColors.earth,
-        "Workforce Management": "#3a8d8c", // Custom teal
-        "Quality & Safety": "#5B8D7E", // A construction green
+        "Workforce Management": "#3a8d8c", 
+        "Quality & Safety": "#5B8D7E", 
         "Platform & Core": "#757575",
         "Construction Intelligence": "#4A4A4A",
         "External Integrations": "#B0B0B0",
-        "Helix": "#000000", // Procore-like Black
+        "Helix": "#000000", 
         "Project Execution": procoreColors.orange,
         "Resource Management": procoreColors.metal,
-        "Emails": "#c94b4b" // A reddish color
+        "Emails": "#c94b4b" 
     };
     
-    // Dynamically build app.categories ONLY from nodesData
-    app.categories = {}; // Start fresh
+    app.categories = {}; 
     nodesData.forEach(node => {
         if (!app.categories[node.group]) {
-            // Assign color from map, or a random color if group is unknown
             app.categories[node.group] = { 
                 color: colorMap[node.group] || "#" + Math.floor(Math.random()*16777215).toString(16)
             };
@@ -100,7 +97,7 @@ function initializeSimulation() {
     setFoci();
 }
 
-// --- Marker & Legend Setup (Adds Checkboxes) ---
+// --- Marker & Legend Setup ---
 function setupMarkers() {
     const defs = app.svg.select("defs");
 
@@ -184,7 +181,6 @@ function populateLegend() {
     });
 }
 
-
 // --- Foci & Clustering ---
 function setFoci() {
     const container = document.getElementById('graph-container');
@@ -237,7 +233,7 @@ function ticked() {
     if(app.node) app.node.attr("transform", d => `translate(${d.x || 0},${d.y || 0})`);
 }
 
-// --- Main Graph Update Function (CORRECTED) ---
+// --- Main Graph Update Function ---
 function updateGraph(isFilterChange = true) {
     if (isFilterChange && app.currentTour) stopTour();
 
@@ -247,11 +243,10 @@ function updateGraph(isFilterChange = true) {
         const inCategory = filters.categories.has(d.group);
         const inPersona = filters.persona === 'all' || (d.personas && d.personas.includes(filters.persona));
         
-        // Filter by Package (Tools)
+        // Filter by Package (Tools) - Only if a package is explicitly selected
         const inPackage = !filters.packageTools || filters.packageTools.has(d.id);
-
-        // *** CRITICAL FIX: REMOVED the 'inAudience' check entirely ***
-        // The audience filter is only for selecting a package, not for filtering nodes directly.
+        
+        // *** FIX: Removed the broken 'inAudience' check ***
         
         return inCategory && inPersona && inPackage;
     });

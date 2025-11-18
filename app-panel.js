@@ -1,24 +1,16 @@
 // --- app-panel.js ---
-// VERSION 3: Fixes 'supportDocUrl' and 'caseStudyUrl' field names.
+// VERSION 5: Adds "What's New" link support.
 
-/**
- * Initializes the info panel event listeners.
- */
 function initializeInfoPanel() {
-    d3.select("#info-close").on("click", () => resetHighlight(true)); // from app-d3-helpers.js
+    d3.select("#info-close").on("click", () => resetHighlight(true)); 
 }
 
-/**
- * Shows and populates the info panel with data from the selected node.
- * @param {Object} d - The node data object.
- */
 function showInfoPanel(d) {
     const infoPanel = d3.select("#info-panel");
     infoPanel.classed("visible", true);
-    
-    infoPanel.node().scrollTop = 0;
+    infoPanel.node().scrollTop = 0; 
 
-    // --- Populate Header ---
+    // Header
     infoPanel.select("#info-title").html(
         `<span class="legend-color" style="background-color:${app.categories[d.group].color}; margin-top: 5px;"></span>${d.id}`
     );
@@ -28,10 +20,10 @@ function showInfoPanel(d) {
         d.level ? `<span class="text-xs font-semibold inline-block py-1.5 px-3 uppercase rounded-full text-gray-700 bg-gray-100 border border-gray-200">${d.level} Level</span>` : ""
     );
 
-    // --- Populate Body ---
+    // Body
     infoPanel.select("#info-description").text(d.description || "No description available.");
 
-    // *** THIS IS THE FIX: Using 'd.supportDocUrl' ***
+    // 1. Support Link
     const linkContainer = infoPanel.select("#info-link-container").html("");
     if (d.supportDocUrl && d.supportDocUrl.trim() !== "") {
         linkContainer.append("a")
@@ -41,7 +33,7 @@ function showInfoPanel(d) {
             .html(`<i class="fas fa-life-ring mr-3"></i> Procore Support & Documentation`);
     }
 
-    // *** THIS IS THE FIX: Using 'd.caseStudyUrl' ***
+    // 2. Case Study Link
     const caseStudyContainer = infoPanel.select("#case-study-link-container").html("");
     if (d.caseStudyUrl && d.caseStudyUrl.trim() !== "") { 
         caseStudyContainer.append("a")
@@ -51,14 +43,19 @@ function showInfoPanel(d) {
             .html(`<i class="fas fa-book-open mr-3"></i> Read Customer Case Study`);
     }
 
-    // --- Populate Connections ---
+    // 3. NEW: What's New Link
+    const whatsNewContainer = infoPanel.select("#whats-new-link-container").html("");
+    if (d.whatsNewUrl && d.whatsNewUrl.trim() !== "") { 
+        whatsNewContainer.append("a")
+            .attr("href", d.whatsNewUrl)
+            .attr("target", "_blank")
+            .attr("class", "text-indigo-600 hover:text-indigo-800 text-base font-medium block transition")
+            .html(`<i class="fas fa-bullhorn mr-3"></i> Review Product Updates`);
+    }
+
     populateConnectionList(d);
 }
 
-/**
- * Populates the connections list in the info panel for the selected node.
- * @param {Object} d - The node data object.
- */
 function populateConnectionList(d) {
     const connections = app.simulation.force("link").links().filter(l => 
         l.source.id === d.id || l.target.id === d.id
@@ -85,8 +82,8 @@ function populateConnectionList(d) {
             const li = connectionList.append("li")
                 .attr("data-other-node-id", otherNode.id)
                 .attr("data-type", l.type)
-                .on("mouseenter", function() { highlightConnection(this, d); }) // from app-d3-helpers.js
-                .on("mouseleave", () => resetHighlight(false)); // from app-d3-helpers.js
+                .on("mouseenter", function() { highlightConnection(this, d); }) 
+                .on("mouseleave", () => resetHighlight(false)); 
 
             li.append("div")
                 .attr("class", "flex items-center font-semibold text-gray-800 pointer-events-none group-hover:text-black transition")
@@ -102,7 +99,6 @@ function populateConnectionList(d) {
             }
         });
 
-        // --- AI Explanation Button ---
         const aiContainer = d3.select("#ai-explanation-container").html("");
         aiContainer.append("button")
             .attr("id", "ai-explain-btn")
@@ -120,19 +116,11 @@ function populateConnectionList(d) {
     }
 }
 
-/**
- * Hides the info panel.
- */
 function hideInfoPanel() {
     d3.select("#info-panel").classed("visible", false);
     d3.select("#tour-info-box").style("display", "none");
 }
 
-/**
- * Calls the Gemini AI API to get an explanation of connections.
- * @param {Object} node - The selected node data.
- * @param {Array} connections - The list of connection link objects.
- */
 async function getAiExplanation(node, connections) {
     const button = d3.select("#ai-explain-btn");
     const contentArea = d3.select("#ai-explanation-content");
@@ -156,7 +144,7 @@ async function getAiExplanation(node, connections) {
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: userQuery }] }] })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) throw new Error(`API Error: ${response.statusText}`);

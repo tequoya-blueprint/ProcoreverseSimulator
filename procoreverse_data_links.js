@@ -711,8 +711,8 @@ const legendData = [
     "label": "Feeds",
     "description": "Reporting data flow. The origin tool's data is consumed by a data intelligence or business intelligence platform for analysis.",
     "visual_style": "Solid line, one arrow, gray"
-  }
-{
+  },
+  {
     "source": "Project Map",
     "target": "Incidents",
     "type": "pulls-data-from",

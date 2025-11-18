@@ -1,5 +1,5 @@
 // --- app-main.js ---
-// VERSION 9: Fixes syntax error crash and removes broken Audience node filtering.
+// VERSION 9: Removes broken Audience filter from nodes.
 
 // --- Global App State ---
 const app = {
@@ -37,6 +37,7 @@ function setupCategories() {
         metal: rootStyles.getPropertyValue('--procore-metal').trim() 
     };
 
+    // Base color map for known groups
     const colorMap = {
         "Preconstruction": procoreColors.lumber,
         "Project Management": procoreColors.orange,
@@ -181,6 +182,7 @@ function populateLegend() {
     });
 }
 
+
 // --- Foci & Clustering ---
 function setFoci() {
     const container = document.getElementById('graph-container');
@@ -243,10 +245,11 @@ function updateGraph(isFilterChange = true) {
         const inCategory = filters.categories.has(d.group);
         const inPersona = filters.persona === 'all' || (d.personas && d.personas.includes(filters.persona));
         
-        // Filter by Package (Tools) - Only if a package is explicitly selected
+        // Filter by Package (Tools)
         const inPackage = !filters.packageTools || filters.packageTools.has(d.id);
-        
-        // *** FIX: Removed the broken 'inAudience' check ***
+
+        // *** FIX: REMOVED 'inAudience' check entirely ***
+        // The audience filter is only for selecting a package, not for filtering nodes directly.
         
         return inCategory && inPersona && inPackage;
     });

@@ -355,7 +355,7 @@ const nodesData = [
     "description": "TBD",
     "personas": [],
     "caseStudyUrl": "",
-    "supportDocUrl": ""
+    "supportDocUrl": "",
     "whatsNewUrl": "https://www.procore.com/whats-new?products=Training+Center"
   },
   {

@@ -1,31 +1,56 @@
 // --- app-controls.js ---
-// VERSION 9: Direct Data Read. No mapping. Fixes filter logic.
+// VERSION 10: Restores missing Data Maps to fix the ReferenceError crash.
+
+// --- DATA MAPPING CONSTANTS ---
+// These maps translate between the UI (Dropdowns) and your Data File.
+
+// 1. Maps Data Values (e.g. "Owners") -> UI Keys (e.g. "O")
+const audienceDataToKeyMap = {
+    "Contractor": "GC",
+    "General Contractor": "GC",
+    "GC": "GC",
+    "SC": "SC",
+    "Specialty Contractor": "SC",
+    "Owners": "O",
+    "Owner": "O",
+    "Owner Developer *Coming Soon": "O"
+};
+
+// 2. Maps UI Keys ("O") -> UI Labels ("Owner")
+const audienceKeyToLabelMap = {
+    "GC": "General Contractor",
+    "SC": "Specialty Contractor",
+    "O": "Owner"
+};
+
+// 3. Maps UI Keys ("O") -> All possible Data Values used for filtering
+const audienceKeyToDataValuesMap = {
+    "GC": ["Contractor", "General Contractor", "GC"],
+    "SC": ["SC", "Specialty Contractor"],
+    "O": ["Owners", "Owner", "Owner Developer *Coming Soon"]
+};
 
 /**
  * Initializes all event listeners for the control panel.
  */
 function initializeControls() {
-    // --- Accordion Setup ---
     document.querySelectorAll('.accordion-header').forEach(header => {
         header.addEventListener('click', () => {
             toggleAccordion(header.parentElement); // from app-utils.js
         });
     });
 
-    // --- Filter Dropdowns ---
     populateRegionFilter();
-    populatePersonaFilter(); 
+    populatePersonaFilter();
     
     d3.select("#region-filter").on("change", onRegionChange);
     d3.select("#audience-filter").on("change", onAudienceChange);
     d3.select("#package-filter").on("change", onPackageChange);
     d3.select("#persona-filter").on("change", () => updateGraph(true));
     
-    // --- Category Filters ---
     populateCategoryFilters(); 
     d3.select("#toggle-categories").on("click", toggleAllCategories);
 
-    // --- Search ---
     d3.select("#search-input").on("input", handleSearchInput);
     d3.select("body").on("click", (e) => {
         if (e.target && !document.getElementById('search-container').contains(e.target)) {
@@ -33,81 +58,67 @@ function initializeControls() {
         }
     });
 
-    // --- Buttons ---
     d3.select("#reset-view").on("click", resetView);
     d3.select("#help-button").on("click", startOnboarding);
     d3.select("#left-panel-toggle").on("click", toggleLeftPanel);
     d3.select("#left-panel-expander").on("click", toggleLeftPanel);
 }
 
-/**
- * 1. Populate Regions directly from data.
- */
 function populateRegionFilter() {
     const regionFilter = d3.select("#region-filter");
-    // Get unique regions exactly as they appear in the data file
+    // Use a Set to get unique regions from your data array
     const regions = [...new Set(packagingData.map(pkg => pkg.region))];
     
     regions.sort().forEach(region => {
-        // Optional: Friendly labels, but keep value matching data
-        let label = region;
+        let label = region; 
         if (region === "NAMER") label = "NAM";
         if (region === "EUR") label = "EMEA";
-        
-        regionFilter.append("option")
-            .attr("value", region)
-            .text(label);
+        regionFilter.append("option").attr("value", region).text(label);
     });
 }
 
-/**
- * 2. On Region Change -> Populate Audiences
- */
 function onRegionChange() {
     const region = d3.select(this).property("value");
     const audienceFilter = d3.select("#audience-filter");
-    const packageFilter = d3.select("#package-filter");
     
-    // Reset downstream filters
     audienceFilter.property("value", "all").property("disabled", region === "all");
-    packageFilter.property("value", "all").property("disabled", true);
+    d3.select("#package-filter").property("value", "all").property("disabled", true);
     
-    // Clear old options
     audienceFilter.html('<option value="all">All Audiences</option>'); 
-    packageFilter.html('<option value="all">All Packages</option>');
 
     if (region !== "all") {
-        // Filter data by Region, then extract unique Audiences
-        const audiences = [...new Set(packagingData
-            .filter(pkg => pkg.region === region)
-            .map(pkg => pkg.audience)
-        )];
+        const availableAudiences = new Set();
+        
+        // Filter data by region, then map the raw audience string to our UI Key (GC/SC/O)
+        packagingData.filter(pkg => pkg.region === region).forEach(pkg => {
+            const audKey = audienceDataToKeyMap[pkg.audience];
+            if (audKey) availableAudiences.add(audKey);
+        });
 
-        audiences.sort().forEach(aud => {
-             audienceFilter.append("option").attr("value", aud).text(aud);
+        // Build the dropdown using the clean UI Keys and Labels
+        [...availableAudiences].sort().forEach(audKey => {
+             audienceFilter.append("option")
+                .attr("value", audKey)
+                .text(audienceKeyToLabelMap[audKey]);
         });
     }
-    
-    // We do NOT update graph here because nodes don't have region/audience data.
-    // We only update graph to clear any previous package selection.
     updateGraph(true);
 }
 
-/**
- * 3. On Audience Change -> Populate Packages
- */
 function onAudienceChange() {
     const region = d3.select("#region-filter").property("value");
     const audience = d3.select(this).property("value");
     const packageFilter = d3.select("#package-filter");
 
-    packageFilter.html('<option value="all">All Packages</option>'); 
+    packageFilter.html('<option value="all">All Packages</option>');
     packageFilter.property("disabled", true);
     
+    // Get the list of data values (e.g. "Owners") that match this selection (e.g. "O")
+    const audienceDataKeys = audienceKeyToDataValuesMap[audience] || [];
+
     if (region !== 'all' && audience !== 'all') {
-        // Filter data by Region AND Audience, get unique Packages
         const packages = packagingData.filter(pkg => 
-            pkg.region === region && pkg.audience === audience
+            pkg.region === region && audienceDataKeys.includes(pkg.audience)
         );
         
         if (packages.length > 0) {
@@ -120,34 +131,20 @@ function onAudienceChange() {
             packageFilter.property("disabled", false);
         }
     }
-    
-    // We do NOT update graph here because selecting an audience doesn't select a package yet.
-    // This prevents the "all nodes disappear" bug.
-    updateGraph(true); 
+    updateGraph(true);
 }
 
-/**
- * 4. On Package Change -> Filter Graph
- */
 function onPackageChange() {
     updateGraph(true);
 }
 
-/**
- * Gathers all active filter values to pass to app-main.js
- */
 function getActiveFilters() {
     const region = d3.select("#region-filter").property('value');
     const audience = d3.select("#audience-filter").property('value');
     const pkgName = d3.select("#package-filter").property('value');
     
-    const activeCategories = new Set(
-        d3.selectAll("#category-filters input:checked").nodes().map(el => el.value)
-    );
-    
-    const activeConnectionTypes = new Set(
-        d3.selectAll(".legend-checkbox:checked").nodes().map(el => el.value)
-    );
+    const activeCategories = new Set(d3.selectAll("#category-filters input:checked").nodes().map(el => el.value));
+    const activeConnectionTypes = new Set(d3.selectAll(".legend-checkbox:checked").nodes().map(el => el.value));
     
     let packageTools = null;
     const addOnsContainer = d3.select("#add-ons-container");
@@ -160,19 +157,21 @@ function getActiveFilters() {
     addOnsContainer.classed('hidden', true);
     servicesContainer.classed('hidden', true);
 
-    // Only attempt to find package info if ALL THREE are selected
+    // ONLY filter by package if a specific package is selected
     if (region !== 'all' && audience !== 'all' && pkgName !== 'all') {
         
+        const audienceDataKeys = audienceKeyToDataValuesMap[audience] || [];
+
         const packageInfo = packagingData.find(pkg => 
             pkg.region === region && 
-            pkg.audience === audience && 
+            audienceDataKeys.includes(pkg.audience) && 
             pkg.package_name === pkgName
         );
         
         if (packageInfo) {
             packageTools = new Set(packageInfo.tools);
             
-            // Populate Add-Ons
+            // Add-Ons
             if (packageInfo['available_add-ons'] && packageInfo['available_add-ons'].length > 0) {
                 packageInfo['available_add-ons'].forEach(addOn => {
                     const label = addOnsCheckboxes.append("label").attr("class", "flex items-center cursor-pointer py-1");
@@ -186,13 +185,10 @@ function getActiveFilters() {
                 addOnsContainer.classed('hidden', false);
             }
             
-            // Add checked Add-Ons to the visible tool list
-            const selectedAddOns = d3.selectAll("#add-ons-checkboxes input:checked")
-                .nodes()
-                .map(el => el.value);
+            const selectedAddOns = d3.selectAll("#add-ons-checkboxes input:checked").nodes().map(el => el.value);
             selectedAddOns.forEach(addOn => packageTools.add(addOn));
 
-            // Populate Services
+            // Services
             if (packageInfo['available_services'] && packageInfo['available_services'].length > 0) {
                 packageInfo['available_services'].forEach(service => {
                     servicesList.append("div")
@@ -207,7 +203,9 @@ function getActiveFilters() {
     return {
         categories: activeCategories,
         persona: d3.select("#persona-filter").property('value'),
-        packageTools: packageTools, // This will be null until a package is fully selected
+        audience: audience,
+        // IMPORTANT: packageTools is NULL if no package selected (showing all nodes)
+        packageTools: packageTools, 
         connectionTypes: activeConnectionTypes
     };
 }
@@ -265,42 +263,5 @@ function resetView() {
     d3.select("#add-ons-container").classed('hidden', true);
     d3.select("#package-services-container").classed('hidden', true);
 
-    updateGraph(false);
-    resetZoom(); 
-}
-
-function handleSearchInput() {
-    const searchInput = this.value.toLowerCase().trim();
-    const searchResults = d3.select("#search-results");
-    if (searchInput.length < 2) {
-        searchResults.html("").style("opacity", 0).style("transform", "scale(0.95)");
-        return;
-    }
-    const results = nodesData.filter(d => d.id.toLowerCase().includes(searchInput));
-    searchResults.html("");
-    if (results.length === 0) {
-        searchResults.append("div").attr("class", "search-item text-sm text-gray-500").text("No results found.");
-    } else {
-        results.forEach(d => {
-            searchResults.append("div").attr("class", "search-item text-sm flex items-center")
-                .html(`<span class="legend-color" style="background-color:${app.categories[d.group].color};"></span>${d.id}`)
-                .on("click", () => selectNodeFromSearch(d));
-        });
-    }
-    searchResults.style("opacity", 1).style("transform", "scale(1)");
-}
-
-function selectNodeFromSearch(d) {
-    if (app.interactionState === 'tour') stopTour();
-    const isVisible = app.simulation.nodes().some(n => n.id === d.id);
-    if (!isVisible) {
-        showToast(`"${d.id}" is hidden by filters. Resetting view.`, 3000);
-        resetView();
-    }
-    setTimeout(() => {
-        const nodeData = app.simulation.nodes().find(n => n.id === d.id);
-        if (nodeData) nodeClicked(new Event('click'), nodeData);
-    }, isVisible ? 0 : 600); 
-    d3.select("#search-input").property("value", "");
-    d3.select("#search-results").html("").style("opacity", 0).style("transform", "scale(0.95)");
-}
+    // Clear caches
+    d3.select("#add-ons-checkboxes").html("");

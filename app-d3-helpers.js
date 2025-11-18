@@ -1,6 +1,5 @@
 // --- app-d3-helpers.js ---
-// Contains helper functions for D3.js interactions like dragging,
-// highlighting, and zooming.
+// VERSION 3: Protects 'tour_preview' mode from accidental resets on mouse move.
 
 /**
  * Generates the SVG path string for a hexagon.
@@ -35,8 +34,7 @@ function drag(simulation) {
     
     function dragended(event, d) {
         if (!event.active) simulation.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
+        // Nodes stay sticky (no fx/fy reset)
     }
     
     return d3.drag()
@@ -54,13 +52,13 @@ function drag(simulation) {
  */
 function nodeClicked(event, d) {
     event.stopPropagation();
-    if (app.interactionState === 'tour') stopTour(); // From app-tours.js
+    
+    // If in a tour or preview, selecting a node shouldn't break the tour
+    if (app.interactionState === 'tour' || app.interactionState === 'tour_preview') return;
 
     if (app.selectedNode === d) {
-        // Clicked the same node, so deselect it
         resetHighlight();
     } else {
-        // Clicked a new node
         app.interactionState = 'selected';
         app.selectedNode = d;
         applyHighlight(d);
@@ -76,7 +74,9 @@ function nodeClicked(event, d) {
  * @param {Object} d - The node data object.
  */
 function nodeMouseOver(event, d) {
-    if (app.interactionState === 'tour') return;
+    // FIX: Don't trigger highlight logic if we are in a tour OR previewing a tour
+    if (app.interactionState === 'tour' || app.interactionState === 'tour_preview') return;
+    
     showTooltip(event, d); // From app-utils.js
     if (app.interactionState === 'explore') {
         applyHighlight(d);
@@ -87,7 +87,9 @@ function nodeMouseOver(event, d) {
  * Handles the mouseout event on a node.
  */
 function nodeMouseOut() {
-    if (app.interactionState === 'tour') return;
+    // FIX: Don't reset highlight logic if we are in a tour OR previewing a tour
+    if (app.interactionState === 'tour' || app.interactionState === 'tour_preview') return;
+    
     hideTooltip(); // From app-utils.js
     if (app.interactionState === 'explore') {
         resetHighlight();
@@ -104,7 +106,6 @@ function applyHighlight(d) {
     const connectedNodeIds = new Set([d.id]);
     const connectedLinks = new Set();
 
-    // Find all links and 1st-degree nodes
     app.simulation.force("link").links().forEach(l => {
         if (l.source.id === d.id || l.target.id === d.id) {
             connectedNodeIds.add(l.source.id);
@@ -113,9 +114,8 @@ function applyHighlight(d) {
         }
     });
 
-    const opacity = 0.1; // Fade opacity
+    const opacity = 0.1; 
     
-    // Apply styles
     app.node.classed("selected", n => app.interactionState === 'selected' && n.id === d.id);
     
     app.node.transition().duration(300)
@@ -124,10 +124,7 @@ function applyHighlight(d) {
     app.link.transition().duration(300)
         .style("stroke-opacity", l => connectedLinks.has(l) ? 1 : opacity * 0.5)
         .attr("marker-end", l => {
-            if (!connectedLinks.has(l) || l.type === 'sync-bi' || l.type === 'read' || l.type === 'sync' || l.type === 'create_link_bi') {
-                return null;
-            }
-            // Use highlighted arrow for connected links
+            if (!connectedLinks.has(l)) return null;
             return `url(#arrow-highlighted)`;
         });
 }
@@ -140,7 +137,6 @@ function applyHighlight(d) {
 function highlightConnection(element, d) {
     const { otherNodeId, type } = element.dataset;
 
-    // Find the specific link
     const specificLink = app.simulation.force("link").links().find(l => 
         (l.source.id === d.id && l.target.id === otherNodeId && l.type === type) ||
         (l.target.id === d.id && l.source.id === otherNodeId && l.type === type)
@@ -149,7 +145,6 @@ function highlightConnection(element, d) {
     const connectedNodeIds = new Set([d.id, otherNodeId]);
     const opacity = 0.1;
 
-    // Apply styles
     app.node.transition().duration(300)
         .style("opacity", n => connectedNodeIds.has(n.id) ? 1 : opacity);
     
@@ -157,9 +152,7 @@ function highlightConnection(element, d) {
         .style("stroke-opacity", l => l === specificLink ? 1 : opacity * 0.5)
         .classed("highlighted", l => l === specificLink)
         .attr("marker-end", l => {
-            if (l !== specificLink || l.type === 'sync-bi' || l.type === 'read' || l.type === 'sync' || l.type === 'create_link_bi') {
-                return null;
-            }
+            if (l !== specificLink) return null;
             return `url(#arrow-highlighted)`;
         });
 }
@@ -169,7 +162,8 @@ function highlightConnection(element, d) {
  * @param {boolean} [hidePanel=true] - Whether to also hide the info panel.
  */
 function resetHighlight(hidePanel = true) {
-    if (app.interactionState === 'tour') return; // Don't reset if a tour is active
+    // FIX: Protect 'tour_preview' as well as 'tour'
+    if (app.interactionState === 'tour' || app.interactionState === 'tour_preview') return; 
 
     app.interactionState = 'explore';
     app.selectedNode = null;
@@ -179,14 +173,25 @@ function resetHighlight(hidePanel = true) {
     
     app.link.classed("highlighted", false).classed("pulsing", false);
     app.link.transition().duration(400)
-        .style("stroke-opacity", 0.6) // Reset to default CSS opacity
+        .style("stroke-opacity", 0.6) 
         .attr("marker-end", d => {
-            if (d.type === 'sync-bi' || d.type === 'read' || d.type === 'sync' || d.type === 'create_link_bi') return null;
-            return `url(#arrow-${d.type})`;
+            // Basic logic to restore default arrow heads based on type
+            // We read from the global legendData if possible, or default
+            if (typeof legendData !== 'undefined') {
+                const legend = legendData.find(l => l.type_id === d.type);
+                if (legend && legend.visual_style.includes("one arrow")) return `url(#arrow-${d.type})`;
+            }
+            return null;
         });
         
     if (hidePanel) {
-        hideInfoPanel(); // From app-panel.js
+        // Only hide if we really want to (e.g., clicking X)
+        // Checking interactionState again just in case
+        if (app.interactionState === 'explore') {
+            // We need to call hideInfoPanel from app-panel.js
+            // Since this is a helper file, we assume that function is global
+            if (typeof hideInfoPanel === 'function') hideInfoPanel();
+        }
     }
     
     d3.select('#graph-container').classed('selection-active', false);
@@ -195,22 +200,15 @@ function resetHighlight(hidePanel = true) {
 
 // --- Camera & Zoom Controls ---
 
-/**
- * Resets the zoom and pan to the default view.
- */
 function resetZoom() {
     app.svg.transition().duration(1000).ease(d3.easeCubicInOut)
         .call(app.zoom.transform, d3.zoomIdentity);
 }
 
-/**
- * Centers and zooms the view on a specific node.
- * @param {Object} d - The node data object.
- */
 function centerViewOnNode(d) {
     if (d.x == null || d.y == null) return;
     
-    const scale = 1.5; // Zoom level when centered
+    const scale = 1.5; 
     const x = app.width / 2 - d.x * scale;
     const y = app.height / 2 - d.y * scale;
     

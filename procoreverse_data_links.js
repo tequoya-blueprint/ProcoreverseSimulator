@@ -217,8 +217,8 @@ const linksData = [
     "dataFlow": "Generates the Prime Contract Schedule of Values from the final estimate."
   },
   {
-    "source": "Bidding",
-    "target": "Procore Construction Network",
+    "source": "Procore Construction Network",
+    "target": "Bidding",
     "type": "pulls-data-from",
     "dataFlow": "Find and invite bidders from the Procore Construction Network."
   },

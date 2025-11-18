@@ -1,5 +1,5 @@
 // --- app-main.js ---
-// VERSION 6: Fixes legend filter event listener and makes line styles distinct.
+// VERSION 9: REMOVES the broken Audience filter logic causing nodes to disappear.
 
 // --- Global App State ---
 const app = {
@@ -57,6 +57,7 @@ function setupCategories() {
     app.categories = {}; // Start fresh
     nodesData.forEach(node => {
         if (!app.categories[node.group]) {
+            // Assign color from map, or a random color if group is unknown
             app.categories[node.group] = { 
                 color: colorMap[node.group] || "#" + Math.floor(Math.random()*16777215).toString(16)
             };
@@ -146,7 +147,6 @@ function populateLegend() {
     const legendContainer = d3.select("#connection-legend");
     legendContainer.html(""); 
 
-    // --- FIX: Distinct SVGs for legend ---
     const legendSVGs = {
         "creates": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='var(--procore-orange)' stroke-width='2' stroke-dasharray='4,3'></line><path d='M17,2 L23,5 L17,8' stroke='var(--procore-orange)' stroke-width='2' fill='none'></path></svg>",
         "converts-to": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='var(--procore-orange)' stroke-width='2' stroke-dasharray='8,4'></line><path d='M17,2 L23,5 L17,8' stroke='var(--procore-orange)' stroke-width='2' fill='none'></path></svg>",
@@ -160,25 +160,21 @@ function populateLegend() {
     legendData.forEach(type => {
         const svg = legendSVGs[type.type_id] || "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
 
-        // --- FIX: Build elements correctly to preserve event listener ---
         const item = legendContainer.append("label")
             .attr("class", "flex items-start mb-2 cursor-pointer") 
             .attr("title", type.description);
         
-        // 1. Append Checkbox
         item.append("input")
             .attr("type", "checkbox")
             .attr("checked", true)
             .attr("value", type.type_id)
             .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 mt-0.5 focus:ring-orange-500 legend-checkbox")
-            .on("change", () => updateGraph(true)); // This listener will now work
+            .on("change", () => updateGraph(true));
 
-        // 2. Append SVG container
         item.append("div")
             .attr("class", "flex-shrink-0 w-8")
             .html(svg);
         
-        // 3. Append Text container
         item.append("div")
             .attr("class", "ml-2")
             .html(`
@@ -189,7 +185,7 @@ function populateLegend() {
 }
 
 
-// --- Foci & Clustering (CORRECTED) ---
+// --- Foci & Clustering ---
 function setFoci() {
     const container = document.getElementById('graph-container');
     app.width = container.clientWidth;
@@ -214,7 +210,6 @@ function setFoci() {
         "Emails": { x: 0.1, y: 0.1 }
     };
 
-    // Build foci from the dynamically created categories
     Object.keys(app.categories).forEach(key => {
         app.categoryFoci[key] = {
             x: app.width * (layout[key]?.x || 0.5), 
@@ -251,9 +246,14 @@ function updateGraph(isFilterChange = true) {
     const filteredNodes = nodesData.filter(d => {
         const inCategory = filters.categories.has(d.group);
         const inPersona = filters.persona === 'all' || (d.personas && d.personas.includes(filters.persona));
-        const inAudience = filters.audience === 'all' || (d.audience && d.audience.includes(filters.audience));
+        
+        // Filter by Package (Tools)
         const inPackage = !filters.packageTools || filters.packageTools.has(d.id);
-        return inCategory && inPersona && inAudience && inPackage;
+
+        // *** CRITICAL FIX: REMOVED the 'inAudience' check entirely ***
+        // The audience filter is only for selecting a package, not for filtering nodes directly.
+        
+        return inCategory && inPersona && inPackage;
     });
 
     const nodeIds = new Set(filteredNodes.map(n => n.id));
@@ -261,7 +261,7 @@ function updateGraph(isFilterChange = true) {
     const filteredLinks = linksData.filter(d => 
         nodeIds.has(d.source.id || d.source) && 
         nodeIds.has(d.target.id || d.target) &&
-        filters.connectionTypes.has(d.type)
+        filters.connectionTypes.has(d.type) 
     ).map(d => ({...d})); 
 
     // --- D3 Data Join: Nodes ---
@@ -291,12 +291,11 @@ function updateGraph(isFilterChange = true) {
             exit => exit.transition().duration(300).style("opacity", 0).remove()
         );
 
-    // --- D3 Data Join: Links (CORRECTED) ---
+    // --- D3 Data Join: Links ---
     app.link = app.link.data(filteredLinks, d => `${d.source.id || d.source}-${d.target.id || d.target}-${d.type}`)
         .join("path")
         .attr("class", d => `link ${d.type}`) 
         .attr("stroke-width", 2)
-        // --- FIX: Apply new colors and distinct dash styles ---
         .attr("stroke", d => {
             const legend = legendData.find(l => l.type_id === d.type);
             if (!legend) return app.defaultArrowColor;
@@ -308,7 +307,6 @@ function updateGraph(isFilterChange = true) {
         .attr("stroke-dasharray", d => {
             const legend = legendData.find(l => l.type_id === d.type);
             if (!legend) return "none";
-            // --- FIX: Distinct dash styles ---
             if (d.type === "creates") return "4,3";
             if (d.type === "converts-to") return "8,4";
             if (d.type === "pulls-data-from") return "2,4";

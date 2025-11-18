@@ -16,7 +16,8 @@ const nodesData = [
       "fm"
     ],
     "caseStudyUrl": "",
-    "supportDocUrl": ""
+    "supportDocUrl": "",
+    "whatsNewUrl": "https://www.procore.com/whats-new?products=Accounting+Integrations"
   },
 
   // --- [Group: Financial Management] ---
@@ -32,7 +33,7 @@ const nodesData = [
     ],
     "caseStudyUrl": "",
     "supportDocUrl": "https://v2.support.procore.com/product-manuals/budget-project/"
-  },
+     },
   {
     "id": "Change Events",
     "group": "Financial Management",
@@ -153,7 +154,8 @@ const nodesData = [
       "owner"
     ],
     "caseStudyUrl": "https://www.procore.com/casestudies/commodore-builders-analytics",
-    "supportDocUrl": "https://v2.support.procore.com/product-manuals/analytics-company/"
+    "supportDocUrl": "https://v2.support.procore.com/product-manuals/analytics-company/",
+    "whatsNewUrl": "https://www.procore.com/whats-new?products=Analytics"
   },
   {
     "id": "Insights",
@@ -322,7 +324,8 @@ const nodesData = [
     "description": "Procore's AI-driven assistant; it responds to questions asked in a conversational style, like the kind of question you might ask a coworker",
     "personas": [],
     "caseStudyUrl": "",
-    "supportDocUrl": "https://v2.support.procore.com/product-manuals/assist-project/"
+    "supportDocUrl": "https://v2.support.procore.com/product-manuals/assist-project/",
+    "whatsNewUrl": "https://www.procore.com/whats-new?products=Assist"
   },
   {
     "id": "Training Center",

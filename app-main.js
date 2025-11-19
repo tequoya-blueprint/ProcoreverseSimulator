@@ -3,7 +3,7 @@
 
 // --- Global App State ---
 const app = {
-    simulation: null, 
+    simulation: null,
     svg: null,
     zoom: null,
     g: null,
@@ -29,28 +29,28 @@ const app = {
 
 // --- Color & Category Definitions ---
 function setupCategories() {
-    // Safely define brand colors using CSS variables
     const rootStyles = getComputedStyle(document.documentElement);
     const procoreColors = { 
         orange: rootStyles.getPropertyValue('--procore-orange').trim(), 
+        lumber: rootStyles.getPropertyValue('--procore-lumber').trim(), 
         earth: rootStyles.getPropertyValue('--procore-earth').trim(), 
         metal: rootStyles.getPropertyValue('--procore-metal').trim() 
     };
 
     const colorMap = {
-        "Preconstruction": "#CEC4A1", // Lumber
+        "Preconstruction": procoreColors.lumber,
         "Financial Management": procoreColors.earth,
         "Quality & Safety": "#5B8D7E", 
         "Platform & Core": "#757575",
         "External Integrations": "#B0B0B0",
-        "Helix": "#000000", // Procore Black
+        "Helix": "#000000", 
         "Project Execution": procoreColors.orange,
         "Resource Management": procoreColors.metal,
-        "Emails": "#c94b4b" 
+        "Emails": "#c94b4b",
+        "Project Map": procoreColors.orange // Project Map is an execution tool
     };
     
     app.categories = {}; 
-    // CRASH FIX: Check if nodesData exists and is an array before trying to iterate
     if (typeof nodesData !== 'undefined' && Array.isArray(nodesData)) {
         nodesData.forEach(node => {
             if (!app.categories[node.group]) {
@@ -107,14 +107,11 @@ function setupMarkers() {
         "feeds": "#4A4A4A", "syncs": "var(--procore-metal)"
     };
 
-    // CRASH FIX: Check if legendData is available before trying to iterate
     if (typeof legendData !== 'undefined' && Array.isArray(legendData)) {
         legendData.forEach(type => {
-            // FIX: Ensure visual_style property exists before accessing 'includes'
-            const style = type.visual_style || '';
             const color = arrowColors[type.type_id] || app.defaultArrowColor;
 
-            if (style.includes("one arrow")) {
+            if (type.visual_style.includes("one arrow")) {
                 defs.append("marker")
                     .attr("id", `arrow-${type.type_id}`)
                     .attr("viewBox", "0 -5 10 10").attr("refX", app.arrowRefX).attr("markerWidth", 5).attr("markerHeight", 5).attr("orient", "auto")
@@ -126,6 +123,7 @@ function setupMarkers() {
     defs.append("marker").attr("id", "arrow-highlighted").attr("viewBox", "0 -5 10 10").attr("refX", app.arrowRefX).attr("markerWidth", 5).attr("markerHeight", 5).attr("orient", "auto")
         .append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", "var(--procore-orange)");
 }
+
 function populateLegend() {
     const legendContainer = d3.select("#connection-legend");
     legendContainer.html(""); 
@@ -140,7 +138,6 @@ function populateLegend() {
         "feeds": "<svg width='24' height='10'><line x1='0' y1='5' x2='20' y2='5' stroke='#4A4A4A' stroke-width='2'></line><path d='M17,2 L23,5 L17,8' stroke='#4A4A4A' stroke-width='2' fill='none'></path></svg>"
     };
 
-    // CRASH FIX: Check if legendData is available before trying to iterate
     if (typeof legendData !== 'undefined' && Array.isArray(legendData)) {
         legendData.forEach(type => {
             const svg = legendSVGs[type.type_id] || "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
@@ -149,7 +146,7 @@ function populateLegend() {
             
             item.append("input").attr("type", "checkbox").attr("checked", true).attr("value", type.type_id)
                 .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 mt-0.5 focus:ring-orange-500 legend-checkbox")
-                .on("change", () => updateGraph(true)); 
+                .on("change", () => updateGraph(true));
 
             item.append("div").attr("class", "flex-shrink-0 w-8").html(svg);
             item.append("div").attr("class", "ml-2").html(`
@@ -171,27 +168,17 @@ function setFoci() {
         app.simulation.force("center", d3.forceCenter(app.width / 2, app.height / 2));
     }
 
-    // Corrected Layout: Commas verified and Project Map added.
     const layout = {
-        "Platform & Core": { x: 0.5, y: 0.5 },
-        "Financial Management": { x: 0.75, y: 0.3 },
-        "Preconstruction": { x: 0.5, y: 0.15 },
-        "Project Management": { x: 0.25, y: 0.3 },
-        "Quality & Safety": { x: 0.25, y: 0.7 },
-        "Workforce Management": { x: 0.75, y: 0.7 },
-        "Construction Intelligence": { x: 0.5, y: 0.85 },
-        "External Integrations": { x: 0.9, y: 0.5 },
-        "Helix": { x: 0.1, y: 0.5 },
-        "Project Execution": { x: 0.25, y: 0.3 },
-        "Resource Management": { x: 0.75, y: 0.7 },
-        "Emails": { x: 0.1, y: 0.1 },
-        // NEW ENTRY
-        "Project Map": { x: 0.25, y: 0.5 } 
+        "Platform & Core": { x: 0.5, y: 0.5 }, "Financial Management": { x: 0.75, y: 0.3 }, "Preconstruction": { x: 0.5, y: 0.15 },
+        "Project Management": { x: 0.25, y: 0.3 }, "Quality & Safety": { x: 0.25, y: 0.7 }, "Workforce Management": { x: 0.75, y: 0.7 },
+        "Construction Intelligence": { x: 0.5, y: 0.85 }, "External Integrations": { x: 0.9, y: 0.5 },
+        "Helix": { x: 0.1, y: 0.5 }, "Project Execution": { x: 0.25, y: 0.3 }, "Resource Management": { x: 0.75, y: 0.7 }, "Emails": { x: 0.1, y: 0.1 },
+        "Project Map": { x: 0.25, y: 0.5 } // FIX: Ensure Project Map positioning is set
     };
 
     Object.keys(app.categories).forEach(key => {
         app.categoryFoci[key] = {
-            x: app.width * (layout[key]?.x || 0.5),
+            x: app.width * (layout[key]?.x || 0.5), 
             y: app.height * (layout[key]?.y || 0.5)
         };
     });
@@ -220,12 +207,16 @@ function ticked() {
 function updateGraph(isFilterChange = true) {
     if (isFilterChange && app.currentTour) stopTour();
 
-    // CRASH FIX: Check if getActiveFilters exists before calling it
     const filters = (typeof getActiveFilters === 'function') ? getActiveFilters() : { categories: new Set(), persona: 'all', packageTools: null, connectionTypes: new Set() };
 
-    const filteredNodes = nodesData.filter(d => {
+    // CRASH FIX: Ensure nodesData exists
+    const nodes = (typeof nodesData !== 'undefined' && Array.isArray(nodesData)) ? nodesData : [];
+
+    const filteredNodes = nodes.filter(d => {
         const inCategory = filters.categories.has(d.group);
         const inPersona = filters.persona === 'all' || (d.personas && d.personas.includes(filters.persona));
+        
+        // Filter by Package (Tools) - Only if a package is explicitly selected
         const inPackage = !filters.packageTools || filters.packageTools.has(d.id);
         
         return inCategory && inPersona && inPackage;
@@ -233,7 +224,7 @@ function updateGraph(isFilterChange = true) {
 
     const nodeIds = new Set(filteredNodes.map(n => n.id));
     
-    // CRASH FIX: Check if linksData exists before filtering
+    // CRASH FIX: Ensure linksData exists before filtering
     const allLinks = (typeof linksData !== 'undefined' && Array.isArray(linksData)) ? linksData : [];
 
     const filteredLinks = allLinks.filter(d => 
@@ -302,7 +293,6 @@ function updateGraph(isFilterChange = true) {
     app.simulation.force("link").links(filteredLinks);
     app.simulation.alpha(1).restart();
     
-    // CRASH FIX: Check if updateTourDropdown exists before calling
     if(typeof updateTourDropdown === 'function') {
         updateTourDropdown(filters.packageTools); 
     }
@@ -322,7 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCategories();
     initializeSimulation(); 
     
-    // CRASH FIX: Check if functions exist before calling
     if(typeof initializeControls === 'function') initializeControls(); 
     if(typeof initializeInfoPanel === 'function') initializeInfoPanel(); 
     if(typeof initializeTourControls === 'function') initializeTourControls(); 

@@ -98,8 +98,6 @@ function initializeSimulation() {
 }
 
 // --- Marker & Legend Setup ---
-// Inside app-main.js, replace the entire setupMarkers function:
-
 function setupMarkers() {
     const defs = app.svg.select("defs");
 

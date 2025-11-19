@@ -1,5 +1,5 @@
 // --- app-utils.js ---
-// VERSION 3: Ensures robust Accordion height calculation and removes the +30 padding bug.
+// VERSION 3: Final Accordion Height Fix using setTimeout.
 
 /**
  * Shows the tooltip with information about a node.
@@ -54,8 +54,10 @@ function toggleAccordion(item) {
 
     if (!isActive) {
         item.classList.add('active');
-        // FIX: Remove fixed padding to ensure scrollHeight is accurate
-        content.style.maxHeight = content.scrollHeight + "px"; 
+        // FIX: Use zero-timeout to calculate height after DOM registers changes
+        setTimeout(() => {
+            content.style.maxHeight = content.scrollHeight + "px"; 
+        }, 0); 
     } else {
         item.classList.remove('active');
         content.style.maxHeight = 0;
@@ -71,7 +73,9 @@ function openAccordionItemById(itemId) {
 
     const content = item.querySelector('.accordion-content');
     item.classList.add('active');
-    content.style.maxHeight = content.scrollHeight + "px";
+    setTimeout(() => {
+        content.style.maxHeight = content.scrollHeight + "px";
+    }, 0);
 }
 
 // --- Onboarding (Interface Tour) Logic ---

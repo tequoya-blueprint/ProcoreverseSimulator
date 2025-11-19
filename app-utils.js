@@ -1,5 +1,5 @@
 // --- app-utils.js ---
-// VERSION 3: Final Accordion Height Fix using setTimeout.
+// VERSION 4: Final Robust Accordion Height Fix.
 
 /**
  * Shows the tooltip with information about a node.
@@ -54,13 +54,16 @@ function toggleAccordion(item) {
 
     if (!isActive) {
         item.classList.add('active');
-        // FIX: Use zero-timeout to calculate height after DOM registers changes
-        setTimeout(() => {
-            content.style.maxHeight = content.scrollHeight + "px"; 
-        }, 0); 
+        // FIX: Temporarily set max-height to none to get true scrollHeight, then set to value
+        content.style.maxHeight = 'none';
+        content.style.maxHeight = content.scrollHeight + "px"; 
     } else {
-        item.classList.remove('active');
-        content.style.maxHeight = 0;
+        // Read the height before setting it to 0 for the transition
+        content.style.maxHeight = content.scrollHeight + "px"; 
+        setTimeout(() => {
+            content.style.maxHeight = 0;
+            item.classList.remove('active');
+        }, 10); // Small delay to ensure CSS registers the height change for the close transition
     }
 }
 
@@ -73,9 +76,9 @@ function openAccordionItemById(itemId) {
 
     const content = item.querySelector('.accordion-content');
     item.classList.add('active');
-    setTimeout(() => {
-        content.style.maxHeight = content.scrollHeight + "px";
-    }, 0);
+    // FIX: Use the robust expansion method for programmatic opening as well
+    content.style.maxHeight = 'none';
+    content.style.maxHeight = content.scrollHeight + "px";
 }
 
 // --- Onboarding (Interface Tour) Logic ---

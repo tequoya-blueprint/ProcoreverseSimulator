@@ -665,7 +665,7 @@ const linksData = [
   "target": "Bidding",
   "type": "pulls-data-from",
   "dataFlow": "Pulls drawings to include in Bid Packages."
-},
+  },
   {
     "source": "Project Map",
     "target": "Incidents",
@@ -696,7 +696,7 @@ const linksData = [
     "type": "pulls-data-from",
     "dataFlow": "Displays Punch List item locations and status on the map."
   }
-];
+  ];
 
 // --- [SECTION 3] - Connection Type Legend ---
 const legendData = [

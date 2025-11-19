@@ -1,10 +1,8 @@
 // --- app-utils.js ---
-// This file contains helper functions for UI, state, and user guidance.
+// VERSION 2: Ensures robust Accordion height calculation and standard utilities.
 
 /**
  * Shows the tooltip with information about a node.
- * @param {Event} e - The D3 mouse event.
- * @param {Object} d - The node data object.
  */
 function showTooltip(e, d) {
     const tooltip = d3.select("#tooltip");
@@ -26,8 +24,6 @@ function hideTooltip() {
 
 /**
  * Shows a toast notification message.
- * @param {string} message - The text to display.
- * @param {number} [duration=3000] - How long to show the toast in ms.
  */
 function showToast(message, duration = 3000) {
     const t = d3.select("#toast-notification");
@@ -51,7 +47,6 @@ function toggleLeftPanel() {
 
 /**
  * Toggles the state of an accordion item.
- * @param {HTMLElement} item - The accordion item element.
  */
 function toggleAccordion(item) {
     const content = item.querySelector('.accordion-content');
@@ -59,7 +54,8 @@ function toggleAccordion(item) {
 
     if (!isActive) {
         item.classList.add('active');
-        content.style.maxHeight = content.scrollHeight + 30 + "px"; // +30 for padding
+        // FIX: Ensure scrollHeight is captured accurately before setting max-height
+        content.style.maxHeight = content.scrollHeight + "px"; 
     } else {
         item.classList.remove('active');
         content.style.maxHeight = 0;
@@ -68,7 +64,6 @@ function toggleAccordion(item) {
 
 /**
  * Opens a specific accordion item by its ID.
- * @param {string} itemId - The ID of the accordion item.
  */
 function openAccordionItemById(itemId) {
     const item = document.getElementById(itemId);
@@ -76,16 +71,12 @@ function openAccordionItemById(itemId) {
 
     const content = item.querySelector('.accordion-content');
     item.classList.add('active');
-    content.style.maxHeight = content.scrollHeight + 30 + "px";
+    content.style.maxHeight = content.scrollHeight + "px";
 }
 
 // --- Onboarding (Interface Tour) Logic ---
 let onboardingStep = 0;
 
-/**
- * Starts the onboarding guided tour of the interface.
- * @param {Event} [e] - The click event (optional).
- */
 function startOnboarding(e) {
     if (e) e.stopPropagation();
     if (app.interactionState !== 'explore') resetHighlight();
@@ -94,9 +85,6 @@ function startOnboarding(e) {
     nextOnboardingStep();
 }
 
-/**
- * Displays the next step in the onboarding tour.
- */
 function nextOnboardingStep() {
     hideTooltip();
     switch (onboardingStep) {
@@ -130,19 +118,10 @@ function nextOnboardingStep() {
     onboardingStep++;
 }
 
-/**
- * Ends the onboarding tour.
- */
 function endOnboarding() {
     hideTooltip();
 }
 
-/**
- * Shows a specific tooltip for the onboarding process.
- * @param {string} elementId - The ID of the element to point to.
- * @param {string} message - The text to display.
- * @param {string} [position='right'] - The position relative to the element.
- */
 function showOnboardingTooltip(elementId, message, position = 'right') {
     const element = document.getElementById(elementId);
     if (!element) return;
@@ -160,7 +139,6 @@ function showOnboardingTooltip(elementId, message, position = 'right') {
         top = h / 2;
         left = w / 2;
     }
-    // Add other positions as needed (e.g., 'bottom', 'left')
 
     const content = `
         <div class="text-base leading-relaxed">${message}</div>

@@ -3,7 +3,7 @@
 
 // --- Global App State ---
 const app = {
-    simulation: null,
+    simulation: null, 
     svg: null,
     zoom: null,
     g: null,

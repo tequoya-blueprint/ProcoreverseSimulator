@@ -1,5 +1,5 @@
 // --- app-utils.js ---
-// VERSION 2: Ensures robust Accordion height calculation and standard utilities.
+// VERSION 3: Ensures robust Accordion height calculation and removes the +30 padding bug.
 
 /**
  * Shows the tooltip with information about a node.
@@ -54,7 +54,7 @@ function toggleAccordion(item) {
 
     if (!isActive) {
         item.classList.add('active');
-        // FIX: Ensure scrollHeight is captured accurately before setting max-height
+        // FIX: Remove fixed padding to ensure scrollHeight is accurate
         content.style.maxHeight = content.scrollHeight + "px"; 
     } else {
         item.classList.remove('active');

@@ -74,7 +74,7 @@
 
         <div id="accordion-container">
             
-            <div class="accordion-item" id="tour-accordion">
+            <div class="accordion-item" id="tour-accordion"> 
                 <div class="accordion-header">
                     <span><i class="fas fa-route mr-3 text-lg"></i>Workflow Tours</span>
                     <i class="fas fa-chevron-down accordion-icon"></i>
@@ -138,14 +138,17 @@
                 </div>
             </div>
 
-            <div class="accordion-item" id="view-options-accordion">
+            <div class="accordion-item active" id="view-options-accordion"> 
                 <div class="accordion-header">
                     <span><i class="fas fa-eye mr-3 text-lg"></i>View Options & Legend</span>
                     <i class="fas fa-chevron-down accordion-icon"></i>
                 </div>
                 <div class="accordion-content">
                     <div id="view-options-container">
-                         <h4 class="text-sm font-semibold text-gray-700 mb-3">Categories</h4>
+                         <button id="help-button" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg text-sm transition duration-150 ease-in-out mb-4 shadow-md">
+                            <i class="fas fa-question-circle mr-2"></i> Guided Tour
+                         </button>
+                         <h4 class="text-sm font-semibold text-gray-700 mb-3 pt-3 border-t border-gray-200">Categories</h4>
                          <div id="category-filters" class="space-y-3 text-sm mb-3"></div>
                          <button id="toggle-categories" class="text-xs text-blue-600 hover:text-blue-800 focus:outline-none w-full text-center mb-5 transition">Toggle All Categories</button>
                         
@@ -161,9 +164,6 @@
         <div class="pt-5 mt-5 border-t border-gray-100">
             <button id="reset-view" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg text-sm transition duration-150 ease-in-out shadow-md">
                 <i class="fas fa-sync-alt mr-2"></i> Reset View
-            </button>
-            <button id="help-button" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg text-sm transition duration-150 ease-in-out mt-3 shadow-md">
-                <i class="fas fa-question-circle mr-2"></i> Guided Tour
             </button>
         </div>
     </div> 
@@ -191,27 +191,13 @@
             <div class="mb-6 space-y-3">
                 <div id="info-link-container"></div>
                 <div id="case-study-link-container"></div>
-                <div id="whats-new-link-container"></div> </div>
+                <div id="whats-new-link-container"></div>
+            </div>
 
             <h4 class="font-bold text-lg text-gray-800 mt-6 mb-4 pb-2 border-b border-gray-100">Data Flow & Connections</h4>
             <ul id="info-connections" class="text-sm space-y-4"></ul>
             
             <div id="ai-explanation-container" class="mt-6"></div>
-        </div>
-    </div>
-
-    <div id="ai-modal-overlay">
-        <div id="ai-modal">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">✨ AI Workflow Builder</h2>
-                <button id="ai-modal-close" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
-            </div>
-            <p class="text-base text-gray-600 mb-5 leading-relaxed">Describe a construction workflow in plain English. Our AI will analyze the Procore platform and generate a guided tour visualizing the process.</p>
-            <textarea id="ai-workflow-input" class="input-style !h-24 !bg-white" rows="3" placeholder="e.g., How does a subcontractor submit an invoice and get paid using Procore Pay?"></textarea>
-            <div id="ai-modal-status" class="text-sm font-semibold text-gray-600 mt-3 h-6"></div>
-            <div class="flex justify-justify-end mt-5">
-                <button id="ai-workflow-generate" class="btn-indigo py-3 px-6">Generate Tour</button>
-            </div>
         </div>
     </div>
 

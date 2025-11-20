@@ -96,7 +96,9 @@ function applyHighlight(d) {
     app.node.transition().duration(300)
         .style("opacity", n => connectedNodeIds.has(n.id) ? 1 : opacity);
     
-    app.link.transition().duration(300)
+    app.link
+        .classed("pulsing", l => connectedLinks.has(l)) // <<<--- ADDED PULSING CLASS BACK
+        .transition().duration(300)
         .style("stroke-opacity", l => connectedLinks.has(l) ? 1 : opacity * 0.5)
         .attr("marker-end", l => {
             if (!connectedLinks.has(l)) return null;

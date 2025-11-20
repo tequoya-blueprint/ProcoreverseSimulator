@@ -24,7 +24,6 @@ function drag(simulation) {
     
     function dragended(event, d) {
         if (!event.active) simulation.alphaTarget(0);
-        // Node stays sticky
     }
     
     return d3.drag()
@@ -51,7 +50,6 @@ function nodeClicked(event, d) {
 }
 
 function nodeMouseOver(event, d) {
-    // FIX: Do not highlight if already selected (mouse leaves node but selection is locked)
     if (app.interactionState === 'tour' || app.interactionState === 'tour_preview' || app.interactionState === 'selected') return;
     
     if (typeof showTooltip === 'function') showTooltip(event, d);
@@ -123,7 +121,6 @@ function highlightConnection(element, d) {
         .style("stroke-opacity", l => l === specificLink ? 1 : opacity * 0.5)
         .classed("highlighted", l => l === specificLink)
         .attr("marker-end", l => {
-            // FIX: Only show highlighted arrow if the link being hovered is the specific link
             if (l !== specificLink) return null;
             return `url(#arrow-highlighted)`;
         });
@@ -134,7 +131,7 @@ function highlightConnection(element, d) {
  */
 function resetHighlight(hidePanel = true) {
     // Protect Tour views and Selected State
-    if (app.interactionState === 'tour' || app.interactionState === 'tour_preview') return; 
+    if (app.interactionState === 'tour' || app.interactionState === 'tour_preview' || app.interactionState === 'selected') return; 
 
     app.interactionState = 'explore';
     app.selectedNode = null;
@@ -149,7 +146,7 @@ function resetHighlight(hidePanel = true) {
         app.link.transition().duration(400)
             .style("stroke-opacity", 0.6) 
             .attr("marker-end", d => {
-                // Restore default arrows
+                // Restore default arrows (FIXES ISSUE 3: ARROWS VISIBLE ON UNCONNECTED NODES)
                 if (typeof legendData !== 'undefined') {
                      const legend = legendData.find(l => l.type_id === d.type);
                      if (legend && legend.visual_style.includes("one arrow")) return `url(#arrow-${d.type})`;

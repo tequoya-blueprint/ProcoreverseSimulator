@@ -174,6 +174,7 @@ function runTourStep() {
     app.node.transition().duration(500).style("opacity", n => tourNodeIds.has(n.id) ? 1 : 0.1);
     app.node.classed("selected", n => n.id === nodeData.id);
 
+    // Reset links before highlighting the current path
     app.link.classed("pulsing", false).classed("highlighted", false)
         .transition().duration(500).style("stroke-opacity", 0.1).attr("marker-end", null);
 
@@ -184,7 +185,9 @@ function runTourStep() {
             (l.source.id === step.nodeId && l.target.id === prevStep.nodeId)
         );
         if (!stepLink.empty()) {
-            stepLink.classed("pulsing", true).transition().duration(500).style("stroke-opacity", 1).attr("marker-end", l => `url(#arrow-highlighted)`);
+            // FIX: Apply pulsing class to make the line move
+            stepLink.classed("pulsing", true) 
+                .transition().duration(500).style("stroke-opacity", 1).attr("marker-end", l => `url(#arrow-highlighted)`);
         }
     }
 

@@ -1,5 +1,5 @@
 // --- app-main.js ---
-// VERSION 11: Final logic. Includes explicit safety checks for legendData structure.
+// VERSION 12: Final logic. Includes explicit safety checks and Hex Size Fix.
 
 // --- Global App State ---
 const app = {
@@ -112,11 +112,11 @@ function setupMarkers() {
 
     if (typeof legendData !== 'undefined' && Array.isArray(legendData)) {
         legendData.forEach(type => {
-            // FIX: Check if type and visual_style exist before access
-            const style = type.visual_style || '';
+            // FIX: Ensure visual_style is available before access
+            const style = type && type.visual_style ? type.visual_style : '';
             const color = arrowColors[type.type_id] || app.defaultArrowColor;
 
-            if (type.type_id && style.includes("one arrow")) {
+            if (type && type.type_id && style.includes("one arrow")) {
                 defs.append("marker")
                     .attr("id", `arrow-${type.type_id}`)
                     .attr("viewBox", "0 -5 10 10").attr("refX", app.arrowRefX).attr("markerWidth", 5).attr("markerHeight", 5).attr("orient", "auto")
@@ -145,19 +145,21 @@ function populateLegend() {
 
     if (typeof legendData !== 'undefined' && Array.isArray(legendData)) {
         legendData.forEach(type => {
-            const svg = legendSVGs[type.type_id] || "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
+            if (type && type.type_id) {
+                const svg = legendSVGs[type.type_id] || "<svg width='24' height='10'><line x1='0' y1='5' x2='24' y2='5' stroke='#a0a0a0' stroke-width='2'></line></svg>";
 
-            const item = legendContainer.append("label").attr("class", "flex items-start mb-2 cursor-pointer").attr("title", type.description);
-            
-            item.append("input").attr("type", "checkbox").attr("checked", true).attr("value", type.type_id)
-                .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 mt-0.5 focus:ring-orange-500 legend-checkbox")
-                .on("change", () => updateGraph(true)); 
+                const item = legendContainer.append("label").attr("class", "flex items-start mb-2 cursor-pointer").attr("title", type.description);
+                
+                item.append("input").attr("type", "checkbox").attr("checked", true).attr("value", type.type_id)
+                    .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 mt-0.5 focus:ring-orange-500 legend-checkbox")
+                    .on("change", () => updateGraph(true)); 
 
-            item.append("div").attr("class", "flex-shrink-0 w-8").html(svg);
-            item.append("div").attr("class", "ml-2").html(`
-                <span class="font-semibold">${type.label}</span>
-                <span class="block text-xs text-gray-500 leading-snug">${type.description}</span>
-            `);
+                item.append("div").attr("class", "flex-shrink-0 w-8").html(svg);
+                item.append("div").attr("class", "ml-2").html(`
+                    <span class="font-semibold">${type.label}</span>
+                    <span class="block text-xs text-gray-500 leading-snug">${type.description}</span>
+                `);
+            }
         });
     }
 }
@@ -178,7 +180,7 @@ function setFoci() {
         "Project Management": { x: 0.25, y: 0.3 }, "Quality & Safety": { x: 0.25, y: 0.7 }, "Workforce Management": { x: 0.75, y: 0.7 },
         "Construction Intelligence": { x: 0.5, y: 0.85 }, "External Integrations": { x: 0.9, y: 0.5 },
         "Helix": { x: 0.1, y: 0.5 }, "Project Execution": { x: 0.25, y: 0.3 }, "Resource Management": { x: 0.75, y: 0.7 }, "Emails": { x: 0.1, y: 0.1 },
-        "Project Map": { x: 0.25, y: 0.5 } // Added Project Map positioning
+        "Project Map": { x: 0.25, y: 0.5 } 
     };
 
     Object.keys(app.categories).forEach(key => {
@@ -220,6 +222,7 @@ function updateGraph(isFilterChange = true) {
     const filteredNodes = nodes.filter(d => {
         const inCategory = filters.categories.has(d.group);
         const inPersona = filters.persona === 'all' || (d.personas && d.personas.includes(filters.persona));
+        
         const inPackage = !filters.packageTools || filters.packageTools.has(d.id);
         
         return inCategory && inPersona && inPackage;
@@ -245,7 +248,6 @@ function updateGraph(isFilterChange = true) {
                     .on("click", nodeClicked); 
                 
                 nodeGroup.append("path")
-                    // FIX: Node size driven by lowercase 'company' level designation
                     .attr("d", d => generateHexagonPath(d.level === 'company' ? app.nodeSizeCompany : app.baseNodeSize)) 
                     .attr("fill", d => app.categories[d.group].color)
                     .style("color", d => app.categories[d.group].color);
@@ -299,3 +301,35 @@ function updateGraph(isFilterChange = true) {
     }
     resetHighlight(); 
 }
+
+// --- Window & Initial Load ---
+window.addEventListener('resize', () => {
+    setFoci();
+    if(app.simulation) {
+        app.simulation.alpha(0.5).restart();
+    }
+});
+
+// --- Main Initialization Function ---
+document.addEventListener('DOMContentLoaded', () => {
+    setupCategories();
+    initializeSimulation(); 
+    
+    if(typeof initializeControls === 'function') initializeControls(); 
+    if(typeof initializeInfoPanel === 'function') initializeInfoPanel(); 
+    if(typeof initializeTourControls === 'function') initializeTourControls(); 
+    
+    populateLegend();
+    updateGraph(false); 
+
+    setTimeout(() => {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
+    }, 1500);
+
+    const helpButton = d3.select("#help-button");
+    if (helpButton.node() && !localStorage.getItem('procoreverseV2_Visited')) {
+        helpButton.classed('initial-pulse', true);
+        localStorage.setItem('procoreverseV2_Visited', 'true');
+    }
+});

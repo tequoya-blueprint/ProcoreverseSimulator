@@ -112,7 +112,6 @@ function setupMarkers() {
 
     if (typeof legendData !== 'undefined' && Array.isArray(legendData)) {
         legendData.forEach(type => {
-            // FIX: Ensure visual_style is available before access
             const style = type && type.visual_style ? type.visual_style : '';
             const color = arrowColors[type.type_id] || app.defaultArrowColor;
 

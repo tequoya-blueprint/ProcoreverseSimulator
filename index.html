@@ -49,20 +49,20 @@
     <button id="left-panel-expander" class="panel absolute top-6 left-6 z-20 w-14 h-14 rounded-xl flex items-center justify-center text-gray-600 hover:text-gray-800 transition hidden shadow-lg" title="Expand Controls">
         <i class="fas fa-sliders-h text-xl"></i>
     </button>
-
-    <div id="controls" class="panel absolute top-6 left-6 w-96 p-6 z-10 custom-scrollbar" style="max-height: calc(100vh - 3rem); overflow-y: auto;" aria-labelledby="controls-heading">
-        <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
-            <div class="flex items-center min-w-0">
-                <i class="fas fa-project-diagram fa-2x text-orange-500 flex-shrink-0 w-8" aria-hidden="true"></i>
-                <h1 id="controls-heading" class="text-xl font-bold ml-3 text-gray-800 leading-tight">Procoreverse<br>Simulator</h1>
-            </div>
-            <div class="flex-shrink-0">
-                <button id="left-panel-toggle" class="text-gray-400 hover:text-gray-600 focus:outline-none rounded-full h-8 w-8 flex items-center justify-center transition" title="Collapse Panel">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            </div>
+<div id="controls" class="panel absolute top-6 left-6 w-96 p-6 z-10 custom-scrollbar" style="max-height: calc(100vh - 3rem);" aria-labelledby="controls-heading">
+    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+        <div class="flex items-center min-w-0">
+            <i class="fas fa-project-diagram fa-2x text-orange-500 flex-shrink-0 w-8" aria-hidden="true"></i>
+            <h1 id="controls-heading" class="text-xl font-bold ml-3 text-gray-800 leading-tight">Procoreverse<br>Simulator</h1>
         </div>
+        <div class="flex-shrink-0">
+            <button id="left-panel-toggle" class="text-gray-400 hover:text-gray-600 focus:outline-none rounded-full h-8 w-8 flex items-center justify-center transition" title="Collapse Panel">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+    </div>
 
+    <div style="max-height: calc(100vh - 12rem); overflow-y: auto; padding-right: 0.5rem; margin-right: -0.5rem;">
         <div class="mb-6 relative" id="search-container">
             <h3 class="text-sm font-semibold mb-2 text-gray-700 sr-only">Search Tools</h3>
             <div class="relative">
@@ -161,13 +161,13 @@
             </div>
 
         </div> 
-
-        <div class="pt-5 mt-5 border-t border-gray-100">
-            <button id="reset-view" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg text-sm transition duration-150 ease-in-out shadow-md">
-                <i class="fas fa-sync-alt mr-2"></i> Reset View
-            </button>
-        </div>
-    </div> 
+    </div>
+    <div class="pt-5 mt-5 border-t border-gray-100">
+        <button id="reset-view" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg text-sm transition duration-150 ease-in-out shadow-md">
+            <i class="fas fa-sync-alt mr-2"></i> Reset View
+        </button>
+    </div>
+</div>
 
     <div id="info-panel" class="panel absolute top-6 right-6 w-96 z-10 custom-scrollbar" style="max-height: calc(100vh - 3rem); overflow-y: auto;">
         <div class="p-6 border-b border-gray-100 sticky top-0 bg-white z-10">

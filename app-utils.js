@@ -1,5 +1,5 @@
 // --- app-utils.js ---
-// VERSION 8: Final Stable Accordion Logic (Relies on CSS for fixed height).
+// VERSION 9: Final stable Accordion Logic (Synchronous height calculation).
 
 function showTooltip(e, d) {
     const tooltip = d3.select("#tooltip");
@@ -37,14 +37,17 @@ function toggleLeftPanel() {
  * Toggles the state of an accordion item (Main Logic).
  */
 function toggleAccordion(item) {
+    const content = item.querySelector('.accordion-content');
     const isActive = item.classList.contains('active');
 
     if (!isActive) {
+        // OPENING SEQUENCE
         item.classList.add('active');
-        // Let CSS handle the large max-height
+        content.style.maxHeight = content.scrollHeight + 20 + "px"; // Add buffer for padding
     } else {
+        // CLOSING SEQUENCE
+        content.style.maxHeight = 0;
         item.classList.remove('active');
-        // Let CSS handle the max-height: 0
     }
 }
 
@@ -54,9 +57,10 @@ function toggleAccordion(item) {
 function openAccordionItemById(itemId) {
     const item = document.getElementById(itemId);
     if (!item || item.classList.contains('active')) return;
-    
-    // Just add the class, CSS handles the rest
+
+    const content = item.querySelector('.accordion-content');
     item.classList.add('active');
+    content.style.maxHeight = content.scrollHeight + 20 + "px"; // Add buffer
 }
 
 // --- Onboarding (Interface Tour) Logic ---

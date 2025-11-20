@@ -189,7 +189,7 @@ const linksData = [
   {
     "source": "Estimating",
     "target": "Bidding",
-    "type": "creates",
+    "type": "syncs",
     "dataFlow": "Generates bid packages based on cost estimates."
   },
   {
@@ -235,14 +235,14 @@ const linksData = [
     "dataFlow": "BETA: Awarded Bids are synced with the original estimate for final calculations."
   },
   {
-    "source": "Estimating",
-    "target": "Drawings",
+    "source": "Drawings",
+    "target": "Estimating",
     "type": "pulls-data-from",
     "dataFlow": "Pulls drawings for creating takeoffs."
   },
   {
-    "source": "Estimating",
-    "target": "Documents",
+    "source": "Documents",
+    "target": "Estimating",
     "type": "pulls-data-from",
     "dataFlow": "Pulls models and other documents for estimating."
   },

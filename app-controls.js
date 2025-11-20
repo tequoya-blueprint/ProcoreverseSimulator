@@ -1,5 +1,5 @@
 // --- app-controls.js ---
-// VERSION 11: Final filter logic. Array parsing corrected.
+// VERSION 12: Final filter logic. Fixes ReferenceError in initialization order.
 
 // --- DATA MAPPING CONSTANTS ---
 const audienceDataToKeyMap = {
@@ -15,7 +15,7 @@ const audienceKeyToLabelMap = {
 };
 
 const audienceKeyToDataValuesMap = {
-    "GC": ["Contractor", "GC", "General Contractor"],
+    "GC": ["Contractor", "General Contractor", "GC"],
     "SC": ["SC", "Specialty Contractor"],
     "O": ["Owners", "Owner", "Owner Developer *Coming Soon"]
 };
@@ -28,18 +28,15 @@ function initializeControls() {
         });
     });
 
-    populateRegionFilter();
-    populatePersonaFilter(); 
-    
+    // --- Filter Dropdowns (Event Listeners) ---
     d3.select("#region-filter").on("change", onRegionChange);
     d3.select("#audience-filter").on("change", onAudienceChange);
     d3.select("#package-filter").on("change", onPackageChange);
     d3.select("#persona-filter").on("change", () => {if (typeof updateGraph === 'function') updateGraph(true)});
-    
-    populateCategoryFilters(); 
     d3.select("#toggle-categories").on("click", toggleAllCategories);
-    d3.select("#toggle-legend").on("click", toggleAllConnections); // FIX: Toggle Legend listener
+    d3.select("#toggle-legend").on("click", toggleAllConnections);
 
+    // --- Search ---
     d3.select("#search-input").on("input", handleSearchInput);
     d3.select("body").on("click", (e) => {
         if (e.target && !document.getElementById('search-container').contains(e.target)) {
@@ -51,6 +48,11 @@ function initializeControls() {
     d3.select("#help-button").on("click", startOnboarding);
     d3.select("#left-panel-toggle").on("click", toggleLeftPanel);
     d3.select("#left-panel-expander").on("click", toggleLeftPanel);
+
+    // --- EXECUTION FIX: Call functions at the end of initialization ---
+    populateRegionFilter();
+    populatePersonaFilter(); 
+    populateCategoryFilters(); 
 }
 
 let allConnectionsChecked = true;
@@ -65,8 +67,7 @@ function populateRegionFilter() {
     const regions = [...new Set(packagingData.map(pkg => pkg.region))];
     
     regions.sort().forEach(region => {
-        let label = region; 
-        if (region === "EUR") label = "EMEA";
+        let label = region === "NAMER" ? "NAM" : (region === "EUR" ? "EMEA" : region);
         regionFilter.append("option").attr("value", region).text(label);
     });
 }
@@ -160,8 +161,8 @@ function populateAddOnsAndServices(packageInfo) {
         addOnsContainer.classed('hidden', false);
     }
 
-    if (packageInfo['available_services'] && packageInfo['available_services'].length > 0) {
-        packageInfo['available_services'].forEach(service => {
+    if (packageInfo['available_services'] && packageInfo['available-services'].length > 0) {
+        packageInfo['available-services'].forEach(service => {
             servicesList.append("div").attr("class", "flex items-center text-gray-700")
                 .html(`<i class="fas fa-check-circle text-green-500 mr-2"></i> ${service}`);
         });
@@ -235,6 +236,28 @@ function populatePersonaFilter() {
         };
         personaFilter.append("option").attr("value", p).text(personaMap[p] || p);
     });
+}
+
+function populateCategoryFilters() {
+    const filtersContainer = d3.select("#category-filters");
+    filtersContainer.html(""); 
+    if (typeof app !== 'undefined' && app.categories) {
+        Object.keys(app.categories).sort().forEach(cat => {
+            const label = filtersContainer.append("label").attr("class", "flex items-center cursor-pointer py-1");
+            label.append("input").attr("type", "checkbox").attr("checked", true).attr("value", cat)
+                .attr("class", "form-checkbox h-5 w-5 text-orange-600 transition rounded mr-3 focus:ring-orange-500")
+                .on("change", () => {if (typeof updateGraph === 'function') updateGraph(true)});
+            label.append("span").attr("class", "legend-color").style("background-color", app.categories[cat].color);
+            label.append("span").attr("class", "text-gray-700").text(cat);
+        });
+    }
+}
+
+let allCategoriesChecked = true;
+function toggleAllCategories() {
+    allCategoriesChecked = !allCategoriesChecked;
+    d3.selectAll("#category-filters input").property("checked", allCategoriesChecked);
+    if (typeof updateGraph === 'function') updateGraph(true);
 }
 
 function resetView() {
